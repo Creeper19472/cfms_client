@@ -1,0 +1,41 @@
+[project]
+name = "cfms-client"
+version = "0.0.1"
+description = ""
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Creeper19472", email = "creeper19472@crpteam.club" }
+]
+dependencies = [
+  "flet==0.28.3"
+]
+
+[tool.flet]
+# org name in reverse domain name notation, e.g. "com.mycompany".
+# Combined with project.name to build bundle ID for iOS and Android apps
+org = "org.crpteam"
+
+# project display name that is used as an app title on Android and iOS home screens,
+# shown in window titles and about app dialogs on desktop.
+product = "cfms-client"
+
+# company name to display in about app dialogs
+company = "Creeper Team"
+
+# copyright text to display in about app dialogs
+copyright = "Copyright (C) 2025 by Creeper Team"
+
+[tool.flet.app]
+path = "src"
+
+[tool.uv]
+dev-dependencies = [
+    "flet[all]==0.28.3",
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+flet = {extras = ["all"], version = "0.28.3"}
