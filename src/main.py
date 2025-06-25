@@ -1,9 +1,15 @@
 # type: ignore
 from websockets import ClientConnection
+from include.log import getCustomLogger
 
 import flet as ft
 from pages.connect import ConnectToServerModel
 from pages.home import HomeModel
+from pages.login import LoginModel
+# from pages.files import FilesModel
+# from common.navigation import MyNavBar
+# from pages.settings import SettingsModel
+
 
 def main(page: ft.Page):
     # Page settings
@@ -32,6 +38,7 @@ def main(page: ft.Page):
     page.notch_shape = ft.NotchShape.AUTO
 
     page.websocket: ClientConnection
+    page.logger = getCustomLogger("client")
 
     page.go("/connect")
 

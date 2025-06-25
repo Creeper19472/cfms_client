@@ -8,7 +8,10 @@ authors = [
     { name = "Creeper19472", email = "creeper19472@crpteam.club" }
 ]
 dependencies = [
-  "flet==0.28.3"
+  "flet==0.28.3",
+  "flet_model",
+  "websockets",
+  "pycryptodome"
 ]
 
 [tool.flet]

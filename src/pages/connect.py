@@ -44,7 +44,7 @@ class ConnectToServerModel(Model):
         self.page.update()
 
         server_address = self.server_address_ref.current.value
-        print(server_address)
+        # print(server_address)
         # Regular expression to match "wss://<valid server address>"
         wss_pattern = r"^wss:\/\/[a-zA-Z0-9.-]+(:[0-9]+)?$"
 
@@ -74,7 +74,7 @@ class ConnectToServerModel(Model):
                 return
 
             self.page.title = f"CFMS Client - {server_address}"
-            self.page.go("/home")
+            self.page.go("/login")
 
     def __init__(self, page: ft.Page):
         super().__init__(page)
@@ -105,6 +105,8 @@ class ConnectToServerModel(Model):
             color=TEXT_COLOR,
             hint_style=ft.TextStyle(color=PLACEHOLDER_COLOR),
             border_radius=8,
+            value="wss://localhost:5104", # default
+            autofocus=True,
             on_submit=self.connect_button_clicked  # Listen for the enter key event
         )
 
@@ -131,7 +133,7 @@ class ConnectToServerModel(Model):
         )
 
         explanation_text = ft.Text(
-            "CFMS Client ver. 20250624",
+            "CFMS Client ver. 20250625",
             color=PLACEHOLDER_COLOR,
             size=12,
             text_align=ft.TextAlign.CENTER,
