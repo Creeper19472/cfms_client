@@ -3,8 +3,9 @@ import flet as ft
 from flet_model import Model, route
 from websockets import ClientConnection
 from include.request import build_request
-from include.transfer import receive_file_from_server
+from include.transfer import receive_file_from_server, upload_file_to_server
 from datetime import datetime
+import threading, json
 
 # from common.navigation import MyNavBar
 
@@ -20,6 +21,7 @@ BUTTON_RADIUS = 12  # Slightly smaller for a sharper modern look
 FORM_WIDTH = 380
 
 current_directory_id = ""
+
 
 class MyNavBar(ft.NavigationBar):
     def __init__(self):
@@ -65,7 +67,83 @@ def send_error(page: ft.Page, message: str):
         behavior=ft.SnackBarBehavior.FLOATING,
         bgcolor=ERROR_COLOR,
     )
-    page.open(error_snack_bar)
+    page.overlay.append(error_snack_bar)
+    error_snack_bar.open = True
+    page.update()
+
+
+def open_create_directory_form(page: ft.Page):
+
+    this_loading_animation = ft.ProgressRing(visible=False)
+
+    folder_name_field = ft.TextField(
+        label="目录名称",
+        on_submit=lambda e: create_directory(
+            e.page, e.control.value, parent_id=current_directory_id
+        ),
+    )
+    submit_button = ft.TextButton(
+        "创建",
+        on_click=lambda e: create_directory(
+            e.page, folder_name_field.value, parent_id=current_directory_id
+        ),
+    )
+    cancel_button = ft.TextButton("取消", on_click=lambda e: page.close(dialog))
+
+    dialog = ft.AlertDialog(
+        title=ft.Text("创建文件夹"),
+        # title_padding=ft.padding.all(25),
+        content=ft.Column(
+            controls=[
+                folder_name_field,
+            ],
+            # spacing=15,
+            height=50,
+            width=400,
+            alignment=ft.alignment.center,
+        ),
+        actions=[
+            submit_button,
+            this_loading_animation,
+            cancel_button,
+        ],
+        # alignment=ft.MainAxisAlignment.CENTER,
+    )
+
+    page.overlay.append(dialog)
+    dialog.open = True
+    page.update()
+
+    def create_directory(page: ft.Page, name: str, parent_id=None):
+        folder_name_field.disabled = True
+        cancel_button.disabled = True
+        this_loading_animation.visible = True
+        dialog.modal = False
+        # dialog.actions.remove(cancel_button)
+        dialog.actions.remove(submit_button)
+        page.update()
+
+        response = build_request(
+            page,
+            action="create_directory",
+            data={"parent_id": parent_id, "name": name},
+            username=page.session.get("username"),
+            token=page.session.get("token"),
+        )
+
+        if (code := response["code"]) != 200:
+            send_error(page, f"Action failed: ({code}) {response['message']}")
+            # folder_name_field.disabled = False
+            # dialog.actions.append(submit_button)
+            # cancel_button.disabled = False
+            # this_loading_animation.visible = False
+            page.update()
+        else:
+            pass
+            # load_directory(page, folder_id=current_directory_id)
+
+        page.close(dialog)
+        load_directory(page, folder_id=current_directory_id)
 
 
 def load_directory(page: ft.Page, folder_id=None):
@@ -88,7 +166,11 @@ def load_directory(page: ft.Page, folder_id=None):
     if (code := response["code"]) != 200:
         send_error(page, f"加载失败: ({code}) {response['message']}")
     else:
-        update_file_controls(response["data"]["folders"], response["data"]["documents"])
+        update_file_controls(
+            response["data"]["folders"],
+            response["data"]["documents"],
+            response["data"]["parent_id"],
+        )
         file_listview.visible = True
         file_listview.update()
 
@@ -106,20 +188,93 @@ def open_document(page: ft.Page, document_id: str):
     task_id = task_data["task_id"]
     task_start_time = task_data["start_time"]
     task_end_time = task_data["end_time"]
-    receive_file_from_server(page, task_id)
+
+    def handle_file_receive(page, task_id):
+        receive_file_from_server(page, task_id)
+
+    # Create a new thread to handle the file receiving process
+    thread = threading.Thread(target=handle_file_receive, args=(page, task_id))
+    thread.start()
+    # receive_file_from_server(page, task_id)
 
 
+def upload_file(page: ft.Page):
 
-def update_file_controls(folders: list[dict], documents: list[dict]):
-    file_listview.controls = [
-        ft.ListTile(
-            leading=ft.Icon(ft.Icons.FOLDER),
-            title=ft.Text(folder["name"]),
-            subtitle=ft.Text(f"Last modified: {folder['last_modified']}"),
-            on_click=lambda e: load_directory(e.page, folder_id=folder["id"]),
-        )
-        for folder in folders
-    ]
+    page.session.set("load_directory", load_directory)
+    page.session.set("current_directory_id", current_directory_id)
+
+    def pick_files_result(e: ft.FilePickerResultEvent|None):
+        if not e.files:
+            return
+
+        for each_file in e.files:
+            response = build_request(
+                page,
+                action="create_document",
+                data={
+                    "title": each_file.name,
+                    "folder_id": current_directory_id,
+                    "access_rules": {}
+                },
+                username=page.session.get("username"),
+                token=page.session.get("token"),
+            )
+
+            task_id = response["data"]["task_data"]["task_id"]
+
+            def handle_file_upload(page, task_id):
+                upload_file_to_server(page, response["data"]["task_data"]["task_id"], each_file.path)
+
+            # Create a new thread to handle the file uploading process
+            thread = threading.Thread(target=handle_file_upload, args=(page, task_id))
+            thread.start()
+        
+        
+        # selected_files.value = (
+        #     ", ".join(map(lambda f: f.name, e.files)) if e.files else "Cancelled!"
+        # )
+        # selected_files.update()
+
+    pick_files_dialog = ft.FilePicker(on_result=pick_files_result)
+    # selected_files = ft.Text()
+
+    page.overlay.append(pick_files_dialog)
+    # page.overlay.append(selected_files)
+    page.update()
+
+    pick_files_dialog.pick_files(allow_multiple=False) # TODO
+
+
+def update_file_controls(folders: list[dict], documents: list[dict], parent_id=None):
+    file_listview.controls = []  # reset
+
+    if parent_id != None:
+        # print("parent_id: ", parent_id)
+        file_listview.controls = [
+            ft.ListTile(
+                leading=ft.Icon(ft.Icons.ARROW_BACK),
+                title=ft.Text("<...>"),
+                subtitle=ft.Text(f"Parent directory"),
+                on_click=lambda e: load_directory(
+                    e.page, folder_id=None if parent_id == "/" else parent_id
+                ),
+            )
+        ]
+
+    file_listview.controls.extend(
+        [
+            ft.ListTile(
+                leading=ft.Icon(ft.Icons.FOLDER),
+                title=ft.Text(folder["name"]),
+                subtitle=ft.Text(
+                    f"Last modified: {datetime.fromtimestamp(folder['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
+                ),
+                data=folder["id"],
+                on_click=lambda e: load_directory(e.page, e.control.data),
+            )
+            for folder in folders
+        ]
+    )
     file_listview.controls.extend(
         [
             ft.ListTile(
@@ -128,7 +283,8 @@ def update_file_controls(folders: list[dict], documents: list[dict]):
                 subtitle=ft.Text(
                     f"Last modified: {datetime.fromtimestamp(document['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
                 ),
-                on_click=lambda e: open_document(e.page, document["id"]),
+                data=document["id"],
+                on_click=lambda e: open_document(e.page, e.control.data),
             )
             for document in documents
         ]
@@ -161,23 +317,28 @@ files_container = ft.Container(
             ft.Row(
                 controls=[
                     ft.IconButton(
-                        ft.Icons.ADD, on_click=lambda e: print("Upload File")
+                        ft.Icons.ADD, on_click=lambda e: upload_file(e.page)
+                    ),
+                    # ft.IconButton(
+                    #     ft.Icons.DELETE, on_click=lambda e: print("Delete File")
+                    # ),
+                    # ft.IconButton(
+                    #     ft.Icons.FOLDER_OPEN, on_click=lambda e: print("Open Folder")
+                    # ),
+                    ft.IconButton(
+                        ft.Icons.CREATE_NEW_FOLDER,
+                        on_click=lambda e: open_create_directory_form(e.page),
                     ),
                     ft.IconButton(
-                        ft.Icons.DELETE, on_click=lambda e: print("Delete File")
-                    ),
-                    ft.IconButton(
-                        ft.Icons.FOLDER_OPEN, on_click=lambda e: print("Open Folder")
-                    ),
-                    ft.IconButton(
-                        ft.Icons.REFRESH, on_click=lambda e: load_directory(e.page, current_directory_id)
+                        ft.Icons.REFRESH,
+                        on_click=lambda e: load_directory(e.page, current_directory_id),
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.START,
                 spacing=10,
             ),
             ft.Divider(),
-            ft.Text("当前文件列表:", size=18),
+            # ft.Text("当前文件列表:", size=18),
             loading_animation,
             # File list, initially hidden until loading is complete
             file_listview,

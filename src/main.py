@@ -6,6 +6,7 @@ import flet as ft
 from pages.connect import ConnectToServerModel
 from pages.home import HomeModel
 from pages.login import LoginModel
+import threading
 # from pages.files import FilesModel
 # from common.navigation import MyNavBar
 # from pages.settings import SettingsModel
@@ -39,6 +40,8 @@ def main(page: ft.Page):
 
     page.websocket: ClientConnection
     page.logger = getCustomLogger("client")
+    page.session.set("download_lock", threading.Lock())
+    page.session.set("upload_lock", threading.Lock())
 
     page.go("/connect")
 

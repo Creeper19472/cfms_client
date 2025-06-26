@@ -73,6 +73,7 @@ class ConnectToServerModel(Model):
                 self.page.open(self.error_bar)
                 return
 
+            self.page.session.set("server_uri", server_address)
             self.page.title = f"CFMS Client - {server_address}"
             self.page.go("/login")
 
@@ -133,7 +134,7 @@ class ConnectToServerModel(Model):
         )
 
         explanation_text = ft.Text(
-            "CFMS Client ver. 20250625",
+            "0.0.2.20250626_alpha",
             color=PLACEHOLDER_COLOR,
             size=12,
             text_align=ft.TextAlign.CENTER,
