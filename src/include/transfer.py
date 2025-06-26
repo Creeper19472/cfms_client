@@ -2,7 +2,7 @@
 import flet as ft
 import json
 import base64, time
-import os
+import os, sys
 
 # from Crypto.Cipher import AES
 from include.log import getCustomLogger
@@ -140,6 +140,8 @@ def receive_file_from_server(page: ft.Page, task_id: str) -> None:
     except:
         raise
 
+    websocket.close()
+
 
 def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
 
@@ -225,6 +227,7 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
                 page.update()
 
                 if not chunk or len(chunk) < chunk_size:
+                    print("!!break")
                     break
 
         page.overlay.remove(progress_column)
@@ -238,3 +241,5 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
 
     except:
         raise
+
+    websocket.close()

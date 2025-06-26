@@ -342,12 +342,13 @@ files_container = ft.Container(
             loading_animation,
             # File list, initially hidden until loading is complete
             file_listview,
-        ]
+        ],
     ),
     margin=10,
     padding=10,
     alignment=ft.alignment.top_center,
     visible=False,
+    expand=True
 )
 
 home_container = ft.Container(

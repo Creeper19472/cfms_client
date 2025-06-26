@@ -31,7 +31,6 @@ def main(page: ft.Page):
             tile_mode=ft.GradientTileMode.MIRROR,
         )
     )
-    page.scroll = ft.ScrollMode.HIDDEN
     page.theme = ft.Theme(scrollbar_theme=ft.ScrollbarTheme(thickness=0.0))
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
