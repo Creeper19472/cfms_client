@@ -98,7 +98,6 @@ def open_create_directory_form(page: ft.Page):
                 folder_name_field,
             ],
             # spacing=15,
-            height=50,
             width=400,
             alignment=ft.alignment.center,
         ),
@@ -107,6 +106,7 @@ def open_create_directory_form(page: ft.Page):
             this_loading_animation,
             cancel_button,
         ],
+        scrollable=True,
         # alignment=ft.MainAxisAlignment.CENTER,
     )
 
@@ -118,7 +118,7 @@ def open_create_directory_form(page: ft.Page):
         folder_name_field.disabled = True
         cancel_button.disabled = True
         this_loading_animation.visible = True
-        dialog.modal = False
+        dialog.modal = True
         # dialog.actions.remove(cancel_button)
         dialog.actions.remove(submit_button)
         page.update()
@@ -138,9 +138,6 @@ def open_create_directory_form(page: ft.Page):
             # cancel_button.disabled = False
             # this_loading_animation.visible = False
             page.update()
-        else:
-            pass
-            # load_directory(page, folder_id=current_directory_id)
 
         page.close(dialog)
         load_directory(page, folder_id=current_directory_id)
@@ -203,7 +200,7 @@ def upload_file(page: ft.Page):
     page.session.set("load_directory", load_directory)
     page.session.set("current_directory_id", current_directory_id)
 
-    def pick_files_result(e: ft.FilePickerResultEvent|None):
+    def pick_files_result(e: ft.FilePickerResultEvent | None):
         if not e.files:
             return
 
@@ -214,7 +211,7 @@ def upload_file(page: ft.Page):
                 data={
                     "title": each_file.name,
                     "folder_id": current_directory_id,
-                    "access_rules": {}
+                    "access_rules": {},
                 },
                 username=page.session.get("username"),
                 token=page.session.get("token"),
@@ -223,13 +220,14 @@ def upload_file(page: ft.Page):
             task_id = response["data"]["task_data"]["task_id"]
 
             def handle_file_upload(page, task_id):
-                upload_file_to_server(page, response["data"]["task_data"]["task_id"], each_file.path)
+                upload_file_to_server(
+                    page, response["data"]["task_data"]["task_id"], each_file.path
+                )
 
             # Create a new thread to handle the file uploading process
             thread = threading.Thread(target=handle_file_upload, args=(page, task_id))
             thread.start()
-        
-        
+
         # selected_files.value = (
         #     ", ".join(map(lambda f: f.name, e.files)) if e.files else "Cancelled!"
         # )
@@ -242,7 +240,257 @@ def upload_file(page: ft.Page):
     # page.overlay.append(selected_files)
     page.update()
 
-    pick_files_dialog.pick_files(allow_multiple=False) # TODO
+    pick_files_dialog.pick_files(allow_multiple=False)  # TODO
+
+
+def update_mouse_position(e: ft.HoverEvent):
+    e.page.session.set("mouse_x", e.global_x)
+    e.page.session.set("mouse_y", e.global_y)
+    return
+
+
+def on_folder_right_click_menu(e: ft.ControlEvent):
+    # this_loading_animation = ft.ProgressRing(visible=False)
+
+    def delete_directory(inner_event: ft.ControlEvent):
+        response = build_request(
+            inner_event.page,
+            action="delete_directory",
+            data={"folder_id": e.control.content.data},
+            username=inner_event.page.session.get("username"),
+            token=inner_event.page.session.get("token"),
+        )
+        if (code := response["code"]) != 200:
+            send_error(inner_event.page, f"删除失败: ({code}) {response['message']}")
+        else:
+            load_directory(inner_event.page, folder_id=current_directory_id)
+
+        dialog.open = False
+        inner_event.page.update()
+
+    def rename_directory(inner_event):
+        inner_event.page.close(dialog)
+
+        ### 弹出重命名窗口
+        this_loading_animation = ft.ProgressRing(visible=False)
+
+        def request_rename_directory(secondary_inner_event):
+            folder_name_field.disabled = True
+            cancel_button.disabled = True
+            this_loading_animation.visible = True
+            new_dialog.modal = True
+            new_dialog.actions.remove(submit_button)
+            inner_event.page.update()
+
+            response = build_request(
+                inner_event.page,
+                action="rename_directory",
+                data={"folder_id": e.control.content.data, "new_name": folder_name_field.value},
+                username=e.page.session.get("username"),
+                token=e.page.session.get("token"),
+            )
+            if (code := response["code"]) != 200:
+                send_error(inner_event.page, f"重命名失败: ({code}) {response['message']}")
+            else:
+                load_directory(inner_event.page, folder_id=current_directory_id)
+
+            inner_event.page.close(new_dialog)
+
+        folder_name_field = ft.TextField(
+            label="目录的新名称",
+            on_submit=request_rename_directory
+        )
+        submit_button = ft.TextButton(
+            "重命名",
+            on_click=request_rename_directory
+        )
+        cancel_button = ft.TextButton("取消", on_click=lambda _: inner_event.page.close(new_dialog))
+
+        new_dialog = ft.AlertDialog(
+            title=ft.Text("重命名文件夹"),
+            # title_padding=ft.padding.all(25),
+            content=ft.Column(
+                controls=[
+                    folder_name_field,
+                ],
+                # spacing=15,
+                width=400,
+                alignment=ft.alignment.center,
+            ),
+            actions=[
+                submit_button,
+                this_loading_animation,
+                cancel_button,
+            ],
+            scrollable=True,
+            # alignment=ft.MainAxisAlignment.CENTER,
+        )
+
+        inner_event.page.open(new_dialog)
+
+    def open_directory_info(e):
+        dialog.open = False
+        e.page.update()
+
+    menu_listview = ft.ListView(
+        controls=[
+            ft.Column(
+                [
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.DELETE),
+                        title=ft.Text("删除"),
+                        subtitle=ft.Text(f"删除此文件夹"),
+                        on_click=delete_directory,
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.DRIVE_FILE_RENAME_OUTLINE_OUTLINED),
+                        title=ft.Text("重命名"),
+                        subtitle=ft.Text(f"重命名此文件夹"),
+                        on_click=rename_directory,
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.INFO_OUTLINED),
+                        title=ft.Text("属性"),
+                        subtitle=ft.Text(f"查看该文件夹的详细信息"),
+                        on_click=open_directory_info,
+                    ),
+                ],
+                # expand=True,
+                # expand_loose=True
+            )
+        ]
+    )
+
+    dialog = ft.AlertDialog(
+        title=ft.Text("操作"),
+        # title_padding=ft.padding.all(25),
+        content=ft.Column([menu_listview], width=400),
+        scrollable=True,
+        alignment=ft.alignment.center,
+    )
+
+    e.page.open(dialog)
+    e.page.update()
+
+    # print(e.control.content.data)
+
+
+def on_document_right_click_menu(e: ft.ControlEvent):
+    def delete_document(inner_event: ft.ControlEvent):
+        response = build_request(
+            inner_event.page,
+            action="delete_document",
+            data={"document_id": e.control.content.data},
+            username=inner_event.page.session.get("username"),
+            token=inner_event.page.session.get("token"),
+        )
+        if (code := response["code"]) != 200:
+            send_error(inner_event.page, f"删除失败: ({code}) {response['message']}")
+        else:
+            load_directory(inner_event.page, folder_id=current_directory_id)
+
+        inner_event.page.close(dialog)
+
+    def rename_document(inner_event: ft.ControlEvent):
+        inner_event.page.close(dialog)
+
+        ### 弹出重命名窗口
+        this_loading_animation = ft.ProgressRing(visible=False)
+
+        def request_rename_document(secondary_inner_event):
+            document_title_field.disabled = True
+            cancel_button.disabled = True
+            this_loading_animation.visible = True
+            new_dialog.modal = True
+            new_dialog.actions.remove(submit_button)
+            inner_event.page.update()
+
+            response = build_request(
+                inner_event.page,
+                action="rename_document",
+                data={"document_id": e.control.content.data, "new_title": document_title_field.value},
+                username=e.page.session.get("username"),
+                token=e.page.session.get("token"),
+            )
+            if (code := response["code"]) != 200:
+                send_error(inner_event.page, f"重命名失败: ({code}) {response['message']}")
+            else:
+                load_directory(inner_event.page, folder_id=current_directory_id)
+
+            inner_event.page.close(new_dialog)
+
+        document_title_field = ft.TextField(
+            label="文件的新名称",
+            on_submit=request_rename_document
+        )
+        submit_button = ft.TextButton(
+            "重命名",
+            on_click=request_rename_document
+        )
+        cancel_button = ft.TextButton("取消", on_click=lambda _: inner_event.page.close(new_dialog))
+
+        new_dialog = ft.AlertDialog(
+            title=ft.Text("重命名文件"),
+            # title_padding=ft.padding.all(25),
+            content=ft.Column(
+                controls=[
+                    document_title_field,
+                ],
+                # spacing=15,
+                width=400,
+                alignment=ft.alignment.center,
+            ),
+            actions=[
+                submit_button,
+                this_loading_animation,
+                cancel_button,
+            ],
+            scrollable=True,
+            # alignment=ft.MainAxisAlignment.CENTER,
+        )
+
+        inner_event.page.open(new_dialog)
+
+    def open_document_info(e):
+        dialog.open = False
+        e.page.update()
+
+    menu_listview = ft.ListView(
+        controls=[
+            ft.Column(
+                [
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.DELETE),
+                        title=ft.Text("删除"),
+                        subtitle=ft.Text(f"删除此文件"),
+                        on_click=delete_document,
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.DRIVE_FILE_RENAME_OUTLINE_OUTLINED),
+                        title=ft.Text("重命名"),
+                        subtitle=ft.Text(f"重命名此文件"),
+                        on_click=rename_document,
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.INFO_OUTLINED),
+                        title=ft.Text("属性"),
+                        subtitle=ft.Text(f"查看该文件的详细信息"),
+                        on_click=open_document_info,
+                    ),
+                ],
+            )
+        ]
+    )
+
+    dialog = ft.AlertDialog(
+        title=ft.Text("操作"),
+        content=ft.Column([menu_listview], width=400),
+        scrollable=True,
+        alignment=ft.alignment.center,
+    )
+
+    e.page.open(dialog)
+    e.page.update()
 
 
 def update_file_controls(folders: list[dict], documents: list[dict], parent_id=None):
@@ -263,28 +511,37 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
 
     file_listview.controls.extend(
         [
-            ft.ListTile(
-                leading=ft.Icon(ft.Icons.FOLDER),
-                title=ft.Text(folder["name"]),
-                subtitle=ft.Text(
-                    f"Last modified: {datetime.fromtimestamp(folder['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
+            ft.GestureDetector(
+                ft.ListTile(
+                    leading=ft.Icon(ft.Icons.FOLDER),
+                    title=ft.Text(folder["name"]),
+                    subtitle=ft.Text(
+                        f"Last modified: {datetime.fromtimestamp(folder['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
+                    ),
+                    data=folder["id"],
+                    on_click=lambda e: load_directory(e.page, e.control.data),
+                    # on_long_press=pass
                 ),
-                data=folder["id"],
-                on_click=lambda e: load_directory(e.page, e.control.data),
+                on_secondary_tap=lambda e: on_folder_right_click_menu(e),
+                on_hover=lambda e: update_mouse_position(e),
             )
             for folder in folders
         ]
     )
     file_listview.controls.extend(
         [
-            ft.ListTile(
-                leading=ft.Icon(ft.Icons.FILE_COPY),
-                title=ft.Text(document["title"]),
-                subtitle=ft.Text(
-                    f"Last modified: {datetime.fromtimestamp(document['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
+            ft.GestureDetector(
+                ft.ListTile(
+                    leading=ft.Icon(ft.Icons.FILE_COPY),
+                    title=ft.Text(document["title"]),
+                    subtitle=ft.Text(
+                        f"Last modified: {datetime.fromtimestamp(document['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
+                    ),
+                    data=document["id"],
+                    on_click=lambda e: open_document(e.page, e.control.data),
                 ),
-                data=document["id"],
-                on_click=lambda e: open_document(e.page, e.control.data),
+                on_secondary_tap=lambda e: on_document_right_click_menu(e),
+                on_hover=lambda e: update_mouse_position(e),
             )
             for document in documents
         ]
@@ -316,9 +573,7 @@ files_container = ft.Container(
             ft.Text("文件管理", size=24, weight=ft.FontWeight.BOLD),
             ft.Row(
                 controls=[
-                    ft.IconButton(
-                        ft.Icons.ADD, on_click=lambda e: upload_file(e.page)
-                    ),
+                    ft.IconButton(ft.Icons.ADD, on_click=lambda e: upload_file(e.page)),
                     # ft.IconButton(
                     #     ft.Icons.DELETE, on_click=lambda e: print("Delete File")
                     # ),
@@ -348,7 +603,7 @@ files_container = ft.Container(
     padding=10,
     alignment=ft.alignment.top_center,
     visible=False,
-    expand=True
+    expand=True,
 )
 
 home_container = ft.Container(
