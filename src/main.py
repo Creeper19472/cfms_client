@@ -23,6 +23,7 @@ def main(page: ft.Page):
     page.spacing = 0
     page.scroll = ft.ScrollMode.AUTO
     page.bgcolor = ft.Colors.TRANSPARENT
+    
     page.decoration = ft.BoxDecoration(
         gradient=ft.LinearGradient(
             begin=ft.alignment.top_left,

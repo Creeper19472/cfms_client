@@ -516,7 +516,7 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                     leading=ft.Icon(ft.Icons.FOLDER),
                     title=ft.Text(folder["name"]),
                     subtitle=ft.Text(
-                        f"Last modified: {datetime.fromtimestamp(folder['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
+                        f"Last modified: {datetime.fromtimestamp(folder['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}" 
                     ),
                     data=folder["id"],
                     on_click=lambda e: load_directory(e.page, e.control.data),
@@ -535,8 +535,10 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                     leading=ft.Icon(ft.Icons.FILE_COPY),
                     title=ft.Text(document["title"]),
                     subtitle=ft.Text(
-                        f"Last modified: {datetime.fromtimestamp(document['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
+                        f"Last modified: {datetime.fromtimestamp(document['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}\n"
+                        + (f"{document["size"] / 1024 / 1024:.3f} MB" if document["size"] else None)
                     ),
+                    is_three_line=True,
                     data=document["id"],
                     on_click=lambda e: open_document(e.page, e.control.data),
                 ),

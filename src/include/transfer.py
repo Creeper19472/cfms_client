@@ -227,7 +227,6 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
                 page.update()
 
                 if not chunk or len(chunk) < chunk_size:
-                    print("!!break")
                     break
 
         page.overlay.remove(progress_column)
