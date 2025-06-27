@@ -20,10 +20,10 @@ env:
   # BUILD_VERSION: 1.0.0
 
   # Python version to use
-  PYTHON_VERSION: latest
+  PYTHON_VERSION: 3.13.5
   
   # flet-cli version to install for `flet build`
-  FLET_CLI_VERSION: latest
+  FLET_CLI_VERSION: 0.28.3
   
   # Ensures Python uses UTF-8 encoding by default
   PYTHONUTF8: 1
