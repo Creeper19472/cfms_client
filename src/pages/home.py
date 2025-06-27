@@ -520,9 +520,9 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                     ),
                     data=folder["id"],
                     on_click=lambda e: load_directory(e.page, e.control.data),
-                    # on_long_press=pass
                 ),
-                on_secondary_tap=lambda e: on_folder_right_click_menu(e),
+                on_secondary_tap=on_folder_right_click_menu,
+                on_long_press_start=on_folder_right_click_menu,
                 on_hover=lambda e: update_mouse_position(e),
             )
             for folder in folders
@@ -540,7 +540,8 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                     data=document["id"],
                     on_click=lambda e: open_document(e.page, e.control.data),
                 ),
-                on_secondary_tap=lambda e: on_document_right_click_menu(e),
+                on_secondary_tap=on_document_right_click_menu,
+                on_long_press_start=on_document_right_click_menu,
                 on_hover=lambda e: update_mouse_position(e),
             )
             for document in documents
