@@ -2,6 +2,7 @@
 import flet as ft
 from flet_model import Model, route
 from websockets import ClientConnection
+from common.notifications import send_error
 from include.request import build_request
 from include.transfer import receive_file_from_server, upload_file_to_server
 from datetime import datetime
@@ -58,25 +59,14 @@ class MyNavBar(ft.NavigationBar):
                 self.page.update()
             case 3:
                 control.selected_index = control.last_selected_index
+                _refresh_user_list_function: function = self.page.session.get("refresh_user_list")
+                _refresh_user_list_function(e.page, _update_page=False)
                 self.page.go("/manage")
             # case 4:
             #     self.page.go("/logos")
             # case 5:
             #     self.page.go("/slides")
         control.last_selected_index = control.selected_index
-
-
-def send_error(page: ft.Page, message: str):
-    error_snack_bar = ft.SnackBar(
-        content=ft.Text(message),
-        show_close_icon=True,
-        duration=4.0,
-        behavior=ft.SnackBarBehavior.FLOATING,
-        bgcolor=ERROR_COLOR,
-    )
-    page.overlay.append(error_snack_bar)
-    error_snack_bar.open = True
-    page.update()
 
 
 def open_create_directory_form(page: ft.Page):

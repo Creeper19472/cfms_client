@@ -134,7 +134,7 @@ class ConnectToServerModel(Model):
         )
 
         explanation_text = ft.Text(
-            "0.0.3.20250627_alpha",
+            self.page.session.get("version"), # "0.0.3.20250627_alpha"
             color=PLACEHOLDER_COLOR,
             size=12,
             text_align=ft.TextAlign.CENTER,
