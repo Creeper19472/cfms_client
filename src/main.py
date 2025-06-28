@@ -6,6 +6,7 @@ import flet as ft
 from pages.connect import ConnectToServerModel
 from pages.home import HomeModel
 from pages.login import LoginModel
+from pages.manage import ManageModel
 import threading
 # from pages.files import FilesModel
 # from common.navigation import MyNavBar
@@ -23,7 +24,7 @@ def main(page: ft.Page):
     page.spacing = 0
     page.scroll = ft.ScrollMode.AUTO
     page.bgcolor = ft.Colors.TRANSPARENT
-    
+
     page.decoration = ft.BoxDecoration(
         gradient=ft.LinearGradient(
             begin=ft.alignment.top_left,

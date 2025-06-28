@@ -134,6 +134,15 @@ class LoginModel(Model):
             if (code:=response["code"]) == 200:
                 self.page.session.set("username", self.username_field.value)
                 self.page.session.set("token", response["data"]["token"]) 
+                self.page.session.set("user_permissions", response["data"]["permissions"])
+                self.page.session.set("user_groups", response["data"]["groups"])
+
+                if "manage_system" in self.page.session.get("user_permissions"):
+                    navigation_bar = self.page.session.get("navigation_bar")
+                    navigation_bar.destinations.append(
+                        ft.NavigationBarDestination(icon=ft.Icons.CLOUD_CIRCLE, label="Manage System")
+                    )
+
                 self.page.go("/home")
             else:
                 self.login_button.visible = True

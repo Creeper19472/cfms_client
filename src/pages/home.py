@@ -25,19 +25,24 @@ current_directory_id = ""
 
 class MyNavBar(ft.NavigationBar):
     def __init__(self):
+        self.last_selected_index = 1 # 默认值设置成初次进入时默认选中的页面在效果上较好
+
+        nav_destinations = [
+            ft.NavigationBarDestination(icon=ft.Icons.FOLDER, label="Files"),
+            ft.NavigationBarDestination(icon=ft.Icons.HOME, label="Home"),
+            ft.NavigationBarDestination(icon=ft.Icons.SETTINGS, label="Settings"),
+        ]
+
         super().__init__(
-            [
-                ft.NavigationBarDestination(icon=ft.Icons.FOLDER, label="Files"),
-                ft.NavigationBarDestination(icon=ft.Icons.HOME, label="Home"),
-                ft.NavigationBarDestination(icon=ft.Icons.SETTINGS, label="Settings"),
-            ],
+            nav_destinations,
             selected_index=1,
             on_change=self.on_change_item,
             # visible=False
         )
 
-    def on_change_item(self, e):
-        match e.control.selected_index:
+    def on_change_item(self, e: ft.ControlEvent):
+        control: MyNavBar = e.control
+        match control.selected_index:
             case 0:  # Files
                 files_container.visible = True
                 home_container.visible = False
@@ -51,12 +56,14 @@ class MyNavBar(ft.NavigationBar):
                 files_container.visible = False
                 home_container.visible = False
                 self.page.update()
-            # case 3:
-            #     self.page.go("/rounds")
+            case 3:
+                control.selected_index = control.last_selected_index
+                self.page.go("/manage")
             # case 4:
             #     self.page.go("/logos")
             # case 5:
             #     self.page.go("/slides")
+        control.last_selected_index = control.selected_index
 
 
 def send_error(page: ft.Page, message: str):
@@ -285,26 +292,29 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
             response = build_request(
                 inner_event.page,
                 action="rename_directory",
-                data={"folder_id": e.control.content.data, "new_name": folder_name_field.value},
+                data={
+                    "folder_id": e.control.content.data,
+                    "new_name": folder_name_field.value,
+                },
                 username=e.page.session.get("username"),
                 token=e.page.session.get("token"),
             )
             if (code := response["code"]) != 200:
-                send_error(inner_event.page, f"重命名失败: ({code}) {response['message']}")
+                send_error(
+                    inner_event.page, f"重命名失败: ({code}) {response['message']}"
+                )
             else:
                 load_directory(inner_event.page, folder_id=current_directory_id)
 
             inner_event.page.close(new_dialog)
 
         folder_name_field = ft.TextField(
-            label="目录的新名称",
-            on_submit=request_rename_directory
+            label="目录的新名称", on_submit=request_rename_directory
         )
-        submit_button = ft.TextButton(
-            "重命名",
-            on_click=request_rename_directory
+        submit_button = ft.TextButton("重命名", on_click=request_rename_directory)
+        cancel_button = ft.TextButton(
+            "取消", on_click=lambda _: inner_event.page.close(new_dialog)
         )
-        cancel_button = ft.TextButton("取消", on_click=lambda _: inner_event.page.close(new_dialog))
 
         new_dialog = ft.AlertDialog(
             title=ft.Text("重命名文件夹"),
@@ -408,26 +418,29 @@ def on_document_right_click_menu(e: ft.ControlEvent):
             response = build_request(
                 inner_event.page,
                 action="rename_document",
-                data={"document_id": e.control.content.data, "new_title": document_title_field.value},
+                data={
+                    "document_id": e.control.content.data,
+                    "new_title": document_title_field.value,
+                },
                 username=e.page.session.get("username"),
                 token=e.page.session.get("token"),
             )
             if (code := response["code"]) != 200:
-                send_error(inner_event.page, f"重命名失败: ({code}) {response['message']}")
+                send_error(
+                    inner_event.page, f"重命名失败: ({code}) {response['message']}"
+                )
             else:
                 load_directory(inner_event.page, folder_id=current_directory_id)
 
             inner_event.page.close(new_dialog)
 
         document_title_field = ft.TextField(
-            label="文件的新名称",
-            on_submit=request_rename_document
+            label="文件的新名称", on_submit=request_rename_document
         )
-        submit_button = ft.TextButton(
-            "重命名",
-            on_click=request_rename_document
+        submit_button = ft.TextButton("重命名", on_click=request_rename_document)
+        cancel_button = ft.TextButton(
+            "取消", on_click=lambda _: inner_event.page.close(new_dialog)
         )
-        cancel_button = ft.TextButton("取消", on_click=lambda _: inner_event.page.close(new_dialog))
 
         new_dialog = ft.AlertDialog(
             title=ft.Text("重命名文件"),
@@ -516,7 +529,7 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                     leading=ft.Icon(ft.Icons.FOLDER),
                     title=ft.Text(folder["name"]),
                     subtitle=ft.Text(
-                        f"Last modified: {datetime.fromtimestamp(folder['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}" 
+                        f"Last modified: {datetime.fromtimestamp(folder['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
                     ),
                     data=folder["id"],
                     on_click=lambda e: load_directory(e.page, e.control.data),
@@ -536,7 +549,11 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                     title=ft.Text(document["title"]),
                     subtitle=ft.Text(
                         f"Last modified: {datetime.fromtimestamp(document['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}\n"
-                        + (f"{document["size"] / 1024 / 1024:.3f} MB" if document["size"] else None)
+                        + (
+                            f"{document["size"] / 1024 / 1024:.3f} MB"
+                            if document["size"]
+                            else None
+                        )
                     ),
                     is_three_line=True,
                     data=document["id"],
@@ -640,3 +657,7 @@ class HomeModel(Model):
 
     navigation_bar = MyNavBar()
     controls = [home_container, files_container]
+
+    def __init__(self, page: ft.Page):
+        super().__init__(page)
+        self.page.session.set("navigation_bar", self.navigation_bar)
