@@ -49,30 +49,30 @@ class ManagementNavBar(ft.NavigationBar):
 
 def on_user_right_click_menu(e: ft.ControlEvent):
     def delete_user(inner_event: ft.ControlEvent):
-        return
         response = build_request(
             inner_event.page,
-            action="delete_document",
-            data={"document_id": e.control.content.data},
+            action="delete_user",
+            data={"username": e.control.data},
             username=inner_event.page.session.get("username"),
             token=inner_event.page.session.get("token"),
         )
         if (code := response["code"]) != 200:
-            send_error(inner_event.page, f"删除失败: ({code}) {response['message']}")
+            send_error(
+                inner_event.page, f"删除用户失败: ({code}) {response['message']}"
+            )
         else:
-            load_directory(inner_event.page, folder_id=current_directory_id)
+            refresh_user_list(inner_event.page)
 
         inner_event.page.close(dialog)
 
-    def rename_user(inner_event: ft.ControlEvent): # nickname
-        return
+    def rename_user(inner_event: ft.ControlEvent):  # nickname
         inner_event.page.close(dialog)
 
         ### 弹出重命名窗口
         this_loading_animation = ft.ProgressRing(visible=False)
 
-        def request_rename_document(secondary_inner_event):
-            document_title_field.disabled = True
+        def request_rename_user(secondary_inner_event: ft.ControlEvent):
+            nickname_field.disabled = True
             cancel_button.disabled = True
             this_loading_animation.visible = True
             new_dialog.modal = True
@@ -81,41 +81,42 @@ def on_user_right_click_menu(e: ft.ControlEvent):
 
             response = build_request(
                 inner_event.page,
-                action="rename_document",
+                action="rename_user",
                 data={
-                    "document_id": e.control.content.data,
-                    "new_title": document_title_field.value,
+                    "username": e.control.data,
+                    "nickname": nickname_field.value,
                 },
                 username=e.page.session.get("username"),
                 token=e.page.session.get("token"),
             )
             if (code := response["code"]) != 200:
                 send_error(
-                    inner_event.page, f"重命名失败: ({code}) {response['message']}"
+                    inner_event.page,
+                    f"重命名用户昵称失败: ({code}) {response['message']}",
                 )
             else:
-                load_directory(inner_event.page, folder_id=current_directory_id)
+                refresh_user_list(inner_event.page)
 
             inner_event.page.close(new_dialog)
 
-        document_title_field = ft.TextField(
-            label="文件的新名称", on_submit=request_rename_document
+        nickname_field = ft.TextField(
+            label="用户的新昵称", on_submit=request_rename_user
         )
-        submit_button = ft.TextButton("重命名", on_click=request_rename_document)
+        submit_button = ft.TextButton("重命名", on_click=request_rename_user)
         cancel_button = ft.TextButton(
             "取消", on_click=lambda _: inner_event.page.close(new_dialog)
         )
 
         new_dialog = ft.AlertDialog(
-            title=ft.Text("重命名文件"),
+            title=ft.Text("重命名用户昵称"),
             # title_padding=ft.padding.all(25),
             content=ft.Column(
                 controls=[
-                    document_title_field,
+                    nickname_field,
                 ],
                 # spacing=15,
                 width=400,
-                alignment=ft.alignment.center,
+                alignment=ft.MainAxisAlignment.CENTER,
             ),
             actions=[
                 submit_button,
@@ -128,9 +129,94 @@ def on_user_right_click_menu(e: ft.ControlEvent):
 
         inner_event.page.open(new_dialog)
 
-    def view_user_info(e):
+    def view_user_info(inner_event: ft.ControlEvent):
         dialog.open = False
         e.page.update()
+
+        this_loading_animation = ft.ProgressRing(visible=True)
+
+        cancel_button = ft.TextButton(
+            "取消", on_click=lambda _: inner_event.page.close(info_dialog)
+        )
+
+        info_listview = ft.ListView(
+            controls=[
+                ft.Text(f"用户名: {e.control.data}"),
+                ft.Text(f"用户昵称: {e.control.data}"),
+                ft.Text(f"用户邮箱: {e.control.data}"),
+                ft.Text(f"用户权限: {e.control.data}"),
+                ft.Text(f"用户注册时间: {e.control.data}"),
+            ],
+            visible=False
+        )
+
+        def request_user_info(secondary_inner_event: ft.ControlEvent):
+
+            this_loading_animation.visible = True
+            info_listview.visible = False
+            secondary_inner_event.page.update()
+
+            response = build_request(
+                inner_event.page,
+                action="get_user_info",
+                data={
+                    "username": e.control.data,
+                },
+                username=e.page.session.get("username"),
+                token=e.page.session.get("token"),
+            )
+            if (code := response["code"]) != 200:
+                e.page.close(info_dialog)
+                send_error(
+                    inner_event.page,
+                    f"拉取用户信息失败: ({code}) {response['message']}",
+                )
+            else:
+                info_listview.controls = [
+                    ft.Text(f"用户名: {response['data']['username']}"),
+                    ft.Text(f"用户昵称: {response['data']['nickname']}"),
+                    ft.Text(f"用户权限: {response['data']['permissions']}"),
+                    ft.Text(f"用户组： {response['data']['groups']}"),
+                    ft.Text(
+                        f"用户注册时间: {datetime.fromtimestamp(response['data']['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"
+                    ),
+                    ft.Text(f"最后登录于: {datetime.fromtimestamp(response['data']['last_login']).strftime('%Y-%m-%d %H:%M:%S')}"),
+                ]
+                this_loading_animation.visible = False
+                info_listview.visible = True
+
+            e.page.update()
+        
+
+        info_dialog = ft.AlertDialog(
+            title=ft.Row(
+                controls=[
+                    ft.Text("用户详情"),
+                    ft.IconButton(
+                        ft.Icons.REFRESH,
+                        on_click=request_user_info,
+                    ),
+                ]
+            ),
+            # title_padding=ft.padding.all(25),
+            content=ft.Column(
+                controls=[
+                    this_loading_animation,
+                    info_listview
+                ],
+                # spacing=15,
+                width=400,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            actions=[
+                cancel_button,
+            ],
+            scrollable=True,
+            # alignment=ft.MainAxisAlignment.CENTER,
+        )
+
+        inner_event.page.open(info_dialog)
+        request_user_info(inner_event)
 
     menu_listview = ft.ListView(
         controls=[
@@ -170,8 +256,6 @@ def on_user_right_click_menu(e: ft.ControlEvent):
     e.page.update()
 
 
-
-
 def update_user_controls(users: list[dict], _update_page=True):
     user_listview.controls = []  # reset
     user_listview.controls.extend(
@@ -179,15 +263,18 @@ def update_user_controls(users: list[dict], _update_page=True):
             ft.GestureDetector(
                 ft.ListTile(
                     leading=ft.Icon(ft.Icons.ACCOUNT_CIRCLE),
-                    title=ft.Text(user["nickname"]),
+                    title=ft.Text(
+                        user["nickname"] if user["nickname"] else user["username"]
+                    ),
                     subtitle=ft.Text(
-                        f"Username: {user["username"]}\n"+
-                        f"Last login: {datetime.fromtimestamp(user['last_login']).strftime('%Y-%m-%d %H:%M:%S') if user['last_login'] else "Unknown"}"
+                        f"{user["groups"]}\n"
+                        + f"Last login: {datetime.fromtimestamp(user['last_login']).strftime('%Y-%m-%d %H:%M:%S') if user['last_login'] else "Unknown"}"
                     ),
                     is_three_line=True,
                     data=user["username"],
-                    on_click=None,
+                    on_click=on_user_right_click_menu,
                 ),
+                data=user["username"],
                 on_secondary_tap=on_user_right_click_menu,
                 on_long_press_start=on_user_right_click_menu,
                 # on_hover=lambda e: update_mouse_position(e),
@@ -199,8 +286,75 @@ def update_user_controls(users: list[dict], _update_page=True):
         user_listview.update()
 
 
-def create_user(e: ft.ControlEvent):
-    pass
+def open_create_user_form(e: ft.ControlEvent):
+    def request_create_user(inner_event: ft.ControlEvent):
+        this_loading_animation.visible = True
+        inner_event.page.update()
+
+        username_field.disabled = True
+        cancel_button.disabled = True
+        this_loading_animation.visible = True
+        dialog.modal = True
+        dialog.actions.remove(submit_button)
+        inner_event.page.update()
+
+        response = build_request(
+            inner_event.page,
+            action="create_user",
+            data={
+                "username": username_field.value,
+                "password": password_field.value,
+                "nickname": nickname_field.value,
+                "permissions": [],  # TODO
+                "groups": [],
+            },
+            username=e.page.session.get("username"),
+            token=e.page.session.get("token"),
+        )
+        if (code := response["code"]) != 200:
+            send_error(
+                inner_event.page, f"创建用户失败: ({code}) {response['message']}"
+            )
+        else:
+            refresh_user_list(inner_event.page)
+
+        inner_event.page.close(dialog)
+
+    this_loading_animation = ft.ProgressRing(visible=False)
+
+    password_field = ft.TextField(label="密码", on_submit=request_create_user)
+    nickname_field = ft.TextField(
+        label="昵称", on_submit=lambda _: password_field.focus()
+    )
+    username_field = ft.TextField(
+        label="用户名", on_submit=lambda _: nickname_field.focus()
+    )
+
+    submit_button = ft.TextButton(
+        "创建",
+        on_click=request_create_user,
+    )
+    cancel_button = ft.TextButton("取消", on_click=lambda e: e.page.close(dialog))
+
+    dialog = ft.AlertDialog(
+        title=ft.Text("创建用户"),
+        # title_padding=ft.padding.all(25),
+        content=ft.Column(
+            controls=[username_field, nickname_field, password_field],
+            # spacing=15,
+            width=400,
+            alignment=ft.MainAxisAlignment.CENTER,
+        ),
+        actions=[
+            submit_button,
+            this_loading_animation,
+            cancel_button,
+        ],
+        scrollable=True,
+        # alignment=ft.MainAxisAlignment.CENTER,
+    )
+
+    e.page.open(dialog)
 
 
 def refresh_user_list(page: ft.Page, _update_page=True):
@@ -220,9 +374,7 @@ def refresh_user_list(page: ft.Page, _update_page=True):
     if (code := response["code"]) != 200:
         send_error(page, f"加载失败: ({code}) {response['message']}")
     else:
-        update_user_controls(
-            response["data"]["users"], _update_page
-        )
+        update_user_controls(response["data"]["users"], _update_page)
         user_listview.visible = True
         if _update_page:
             user_listview.update()
@@ -252,7 +404,7 @@ manage_accounts_container = ft.Container(
             ft.Text("用户列表", size=24, weight=ft.FontWeight.BOLD),
             ft.Row(
                 controls=[
-                    ft.IconButton(ft.Icons.ADD, on_click=create_user),
+                    ft.IconButton(ft.Icons.ADD, on_click=open_create_user_form),
                     ft.IconButton(
                         ft.Icons.REFRESH,
                         on_click=lambda e: refresh_user_list(e.page),

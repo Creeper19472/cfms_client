@@ -8,6 +8,15 @@ from include.transfer import receive_file_from_server, upload_file_to_server
 from datetime import datetime
 import threading, json
 
+"""
+Why not add a logout button to the user interface...... Well, we tried.
+
+But the problem is that we haven't found a suitable way to gracefully reset 
+all the UI modifications caused by the previous user - especially on the 
+navigation_bar modifications - and some of the UI's buttons are left there 
+incorrectly, causing illusions, and creating confusion.
+"""
+
 # from common.navigation import MyNavBar
 
 # Enhanced Colors & Styles
@@ -26,7 +35,7 @@ current_directory_id = ""
 
 class MyNavBar(ft.NavigationBar):
     def __init__(self):
-        self.last_selected_index = 1 # 默认值设置成初次进入时默认选中的页面在效果上较好
+        self.last_selected_index = 1  # 默认值设置成初次进入时默认选中的页面在效果上较好
 
         nav_destinations = [
             ft.NavigationBarDestination(icon=ft.Icons.FOLDER, label="Files"),
@@ -59,7 +68,9 @@ class MyNavBar(ft.NavigationBar):
                 self.page.update()
             case 3:
                 control.selected_index = control.last_selected_index
-                _refresh_user_list_function: function = self.page.session.get("refresh_user_list")
+                _refresh_user_list_function: function = self.page.session.get(
+                    "refresh_user_list"
+                )
                 _refresh_user_list_function(e.page, _update_page=False)
                 self.page.go("/manage")
             # case 4:
@@ -213,6 +224,20 @@ def upload_file(page: ft.Page):
                 username=page.session.get("username"),
                 token=page.session.get("token"),
             )
+
+            if (code:=response["code"]) != 200:
+                if code == 403:
+                    send_error(
+                        page,
+                        f"上传失败: 无权上传文件",
+                    )
+                    return
+                else:
+                    send_error(
+                        page,
+                        f"上传失败: ({response['code']}) {response['message']}",
+                    )
+                    continue
 
             task_id = response["data"]["task_data"]["task_id"]
 
@@ -620,7 +645,7 @@ home_container = ft.Container(
     content=ft.Column(
         controls=[
             ft.Text("落霞与孤鹜齐飞，秋水共长天一色。", size=22),
-        ]
+        ],
     ),
     margin=10,
     padding=10,
@@ -646,8 +671,9 @@ class HomeModel(Model):
     # )
 
     navigation_bar = MyNavBar()
-    controls = [home_container, files_container]
 
     def __init__(self, page: ft.Page):
         super().__init__(page)
         self.page.session.set("navigation_bar", self.navigation_bar)
+
+    controls = [home_container, files_container]

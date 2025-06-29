@@ -1,7 +1,7 @@
 # type: ignore
 import flet as ft
 from flet_model import Model, route
-import ssl, json
+import ssl, json, time
 from common.navigation import MyNavBar
 from include.request import build_request
 
@@ -143,7 +143,14 @@ class LoginModel(Model):
                         ft.NavigationBarDestination(icon=ft.Icons.CLOUD_CIRCLE, label="Manage System")
                     )
 
+                self.login_button.visible = True
+                self.loading_animation.visible = False
+                self.username_field.value = None
+                self.password_field.value = None
+                self.username_field.disabled = False
+                self.password_field.disabled = False
                 self.page.go("/home")
+                
             else:
                 self.login_button.visible = True
                 self.loading_animation.visible = False
