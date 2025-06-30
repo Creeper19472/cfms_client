@@ -322,7 +322,7 @@ def open_create_user_form(e: ft.ControlEvent):
 
     this_loading_animation = ft.ProgressRing(visible=False)
 
-    password_field = ft.TextField(label="密码", on_submit=request_create_user)
+    password_field = ft.TextField(label="密码", password=True, can_reveal_password=True, on_submit=request_create_user)
     nickname_field = ft.TextField(
         label="昵称", on_submit=lambda _: password_field.focus()
     )

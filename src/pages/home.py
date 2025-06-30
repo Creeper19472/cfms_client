@@ -6,7 +6,7 @@ from common.notifications import send_error
 from include.request import build_request
 from include.transfer import receive_file_from_server, upload_file_to_server
 from datetime import datetime
-import threading, json
+import threading, sys
 
 """
 Why not add a logout button to the user interface...... Well, we tried.
@@ -56,15 +56,18 @@ class MyNavBar(ft.NavigationBar):
             case 0:  # Files
                 files_container.visible = True
                 home_container.visible = False
+                settings_container.visible = False
                 load_directory(self.page, folder_id=current_directory_id)
 
             case 1:
                 files_container.visible = False
                 home_container.visible = True
+                settings_container.visible = False
                 self.page.update()
             case 2:
                 files_container.visible = False
                 home_container.visible = False
+                settings_container.visible = True
                 self.page.update()
             case 3:
                 control.selected_index = control.last_selected_index
@@ -225,7 +228,7 @@ def upload_file(page: ft.Page):
                 token=page.session.get("token"),
             )
 
-            if (code:=response["code"]) != 200:
+            if (code := response["code"]) != 200:
                 if code == 403:
                     send_error(
                         page,
@@ -653,6 +656,44 @@ home_container = ft.Container(
     visible=True,
 )
 
+settings_container = ft.Container(
+    content=ft.Column(
+        controls=[
+            # Avatar frame
+            ft.CircleAvatar(
+                # foreground_image_src="https://avatars.githubusercontent.com/u/_5041459?s=88&v=4",
+                content=ft.Text("A"),
+            ),
+            ft.Divider(),
+            # Menu entries below the avatar
+            ft.ListView(
+                controls=[
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.ACCOUNT_CIRCLE),
+                        title=ft.Text("个人资料"),
+                        on_click=lambda e: e.page.go("/profile"),
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.SETTINGS),
+                        title=ft.Text("设置"),
+                        on_click=lambda e: print("Navigate to Settings"),
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.INFO),
+                        title=ft.Text("关于"),
+                        on_click=lambda e: e.page.go("/about"),
+                    ),
+                ]
+            ),
+        ],
+        spacing=20,
+        alignment=ft.MainAxisAlignment.START,
+    ),
+    margin=10,
+    padding=10,
+    visible=False,  # Initially hidden
+)
+
 
 @route("home")
 class HomeModel(Model):
@@ -676,4 +717,4 @@ class HomeModel(Model):
         super().__init__(page)
         self.page.session.set("navigation_bar", self.navigation_bar)
 
-    controls = [home_container, files_container]
+    controls = [home_container, files_container, settings_container]
