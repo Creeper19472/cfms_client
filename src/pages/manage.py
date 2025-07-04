@@ -139,16 +139,7 @@ def on_user_right_click_menu(e: ft.ControlEvent):
             "取消", on_click=lambda _: inner_event.page.close(info_dialog)
         )
 
-        info_listview = ft.ListView(
-            controls=[
-                ft.Text(f"用户名: {e.control.data}"),
-                ft.Text(f"用户昵称: {e.control.data}"),
-                ft.Text(f"用户邮箱: {e.control.data}"),
-                ft.Text(f"用户权限: {e.control.data}"),
-                ft.Text(f"用户注册时间: {e.control.data}"),
-            ],
-            visible=False
-        )
+        info_listview = ft.ListView(visible=False)
 
         def request_user_info(secondary_inner_event: ft.ControlEvent):
 
@@ -180,13 +171,14 @@ def on_user_right_click_menu(e: ft.ControlEvent):
                     ft.Text(
                         f"用户注册时间: {datetime.fromtimestamp(response['data']['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"
                     ),
-                    ft.Text(f"最后登录于: {datetime.fromtimestamp(response['data']['last_login']).strftime('%Y-%m-%d %H:%M:%S')}"),
+                    ft.Text(
+                        f"最后登录于: {datetime.fromtimestamp(response['data']['last_login']).strftime('%Y-%m-%d %H:%M:%S')}"
+                    ),
                 ]
                 this_loading_animation.visible = False
                 info_listview.visible = True
 
             e.page.update()
-        
 
         info_dialog = ft.AlertDialog(
             title=ft.Row(
@@ -200,10 +192,7 @@ def on_user_right_click_menu(e: ft.ControlEvent):
             ),
             # title_padding=ft.padding.all(25),
             content=ft.Column(
-                controls=[
-                    this_loading_animation,
-                    info_listview
-                ],
+                controls=[this_loading_animation, info_listview],
                 # spacing=15,
                 width=400,
                 alignment=ft.MainAxisAlignment.CENTER,
@@ -322,7 +311,12 @@ def open_create_user_form(e: ft.ControlEvent):
 
     this_loading_animation = ft.ProgressRing(visible=False)
 
-    password_field = ft.TextField(label="密码", password=True, can_reveal_password=True, on_submit=request_create_user)
+    password_field = ft.TextField(
+        label="密码",
+        password=True,
+        can_reveal_password=True,
+        on_submit=request_create_user,
+    )
     nickname_field = ft.TextField(
         label="昵称", on_submit=lambda _: password_field.focus()
     )

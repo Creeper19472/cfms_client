@@ -45,7 +45,7 @@ def main(page: ft.Page):
     page.session.set("download_lock", threading.Lock())
     page.session.set("upload_lock", threading.Lock())
 
-    page.session.set("version", "0.0.5.20250630_alpha")
+    page.session.set("version", "0.0.6.20250704_alpha")
 
     page.go("/connect")
 

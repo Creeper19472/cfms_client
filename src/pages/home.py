@@ -356,9 +356,78 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
 
         inner_event.page.open(new_dialog)
 
-    def open_directory_info(e):
-        dialog.open = False
-        e.page.update()
+    def open_directory_info(inner_event: ft.ControlEvent):
+        e.page.close(dialog)
+
+        this_loading_animation = ft.ProgressRing(visible=True)
+
+        cancel_button = ft.TextButton(
+            "取消", on_click=lambda _: inner_event.page.close(info_dialog)
+        )
+
+        info_listview = ft.ListView(visible=False)
+
+        def request_directory_info(secondary_inner_event: ft.ControlEvent):
+
+            this_loading_animation.visible = True
+            info_listview.visible = False
+            secondary_inner_event.page.update()
+
+            response = build_request(
+                inner_event.page,
+                action="get_directory_info",
+                data={
+                    "directory_id": e.control.content.data,
+                },
+                username=e.page.session.get("username"),
+                token=e.page.session.get("token"),
+            )
+            if (code := response["code"]) != 200:
+                e.page.close(info_dialog)
+                send_error(
+                    inner_event.page,
+                    f"拉取目录信息失败: ({code}) {response['message']}",
+                )
+            else:
+                info_listview.controls = [
+                    ft.Text(f"目录ID: {response['data']['directory_id']}"),
+                    ft.Text(f"目录名称: {response['data']['name']}"),
+                    ft.Text(f"子对象数: {response['data']['count_of_child']}"),
+                    ft.Text(f"创建于: {datetime.fromtimestamp(response['data']['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"),
+                    ft.Text(f"父级目录ID: {response['data']['parent_id']}"),
+                    ft.Text(f"访问规则: {response['data']['access_rules'] if not response['data']['info_code'] else "Unavailable"}"),
+                ]
+                this_loading_animation.visible = False
+                info_listview.visible = True
+
+            e.page.update()
+
+        info_dialog = ft.AlertDialog(
+            title=ft.Row(
+                controls=[
+                    ft.Text("目录详情"),
+                    ft.IconButton(
+                        ft.Icons.REFRESH,
+                        on_click=request_directory_info,
+                    ),
+                ]
+            ),
+            # title_padding=ft.padding.all(25),
+            content=ft.Column(
+                controls=[this_loading_animation, info_listview],
+                # spacing=15,
+                width=400,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            actions=[
+                cancel_button,
+            ],
+            scrollable=True,
+            # alignment=ft.MainAxisAlignment.CENTER,
+        )
+
+        inner_event.page.open(info_dialog)
+        request_directory_info(inner_event)
 
     menu_listview = ft.ListView(
         controls=[
@@ -482,9 +551,78 @@ def on_document_right_click_menu(e: ft.ControlEvent):
 
         inner_event.page.open(new_dialog)
 
-    def open_document_info(e):
-        dialog.open = False
-        e.page.update()
+    def open_document_info(inner_event: ft.ControlEvent):
+        e.page.close(dialog)
+
+        this_loading_animation = ft.ProgressRing(visible=True)
+
+        cancel_button = ft.TextButton(
+            "取消", on_click=lambda _: inner_event.page.close(info_dialog)
+        )
+
+        info_listview = ft.ListView(visible=False)
+
+        def request_document_info(secondary_inner_event: ft.ControlEvent):
+
+            this_loading_animation.visible = True
+            info_listview.visible = False
+            secondary_inner_event.page.update()
+
+            response = build_request(
+                inner_event.page,
+                action="get_document_info",
+                data={
+                    "document_id": e.control.content.data,
+                },
+                username=e.page.session.get("username"),
+                token=e.page.session.get("token"),
+            )
+            if (code := response["code"]) != 200:
+                e.page.close(info_dialog)
+                send_error(
+                    inner_event.page,
+                    f"拉取文档信息失败: ({code}) {response['message']}",
+                )
+            else:
+                info_listview.controls = [
+                    ft.Text(f"文档ID: {response['data']['document_id']}"),
+                    ft.Text(f"文档标题: {response['data']['title']}"),
+                    ft.Text(f"文档大小: {response['data']['size']}"),
+                    ft.Text(f"最后更改时间: {datetime.fromtimestamp(response['data']['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"),
+                    ft.Text(f"父级目录ID: {response['data']['parent_id']}"),
+                    ft.Text(f"访问规则: {response['data']['access_rules'] if not response['data']['info_code'] else "Unavailable"}"),
+                ]
+                this_loading_animation.visible = False
+                info_listview.visible = True
+
+            e.page.update()
+
+        info_dialog = ft.AlertDialog(
+            title=ft.Row(
+                controls=[
+                    ft.Text("文档详情"),
+                    ft.IconButton(
+                        ft.Icons.REFRESH,
+                        on_click=request_document_info,
+                    ),
+                ]
+            ),
+            # title_padding=ft.padding.all(25),
+            content=ft.Column(
+                controls=[this_loading_animation, info_listview],
+                # spacing=15,
+                width=400,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            actions=[
+                cancel_button,
+            ],
+            scrollable=True,
+            # alignment=ft.MainAxisAlignment.CENTER,
+        )
+
+        inner_event.page.open(info_dialog)
+        request_document_info(inner_event)
 
     menu_listview = ft.ListView(
         controls=[
@@ -547,7 +685,7 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                     leading=ft.Icon(ft.Icons.FOLDER),
                     title=ft.Text(folder["name"]),
                     subtitle=ft.Text(
-                        f"Last modified: {datetime.fromtimestamp(folder['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
+                        f"Created time: {datetime.fromtimestamp(folder['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"
                     ),
                     data=folder["id"],
                     on_click=lambda e: load_directory(e.page, e.control.data),
