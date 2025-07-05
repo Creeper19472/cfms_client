@@ -165,7 +165,7 @@ def on_user_right_click_menu(e: ft.ControlEvent):
             else:
                 info_listview.controls = [
                     ft.Text(f"用户名: {response['data']['username']}"),
-                    ft.Text(f"用户昵称: {response['data']['nickname']}"),
+                    ft.Text(f"用户昵称: {response['data']['nickname'] if response['data']['nickname'] else '（无）'}"),
                     ft.Text(f"用户权限: {response['data']['permissions']}"),
                     ft.Text(f"用户组： {response['data']['groups']}"),
                     ft.Text(

@@ -393,9 +393,13 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
                     ft.Text(f"目录ID: {response['data']['directory_id']}"),
                     ft.Text(f"目录名称: {response['data']['name']}"),
                     ft.Text(f"子对象数: {response['data']['count_of_child']}"),
-                    ft.Text(f"创建于: {datetime.fromtimestamp(response['data']['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"),
+                    ft.Text(
+                        f"创建于: {datetime.fromtimestamp(response['data']['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"
+                    ),
                     ft.Text(f"父级目录ID: {response['data']['parent_id']}"),
-                    ft.Text(f"访问规则: {response['data']['access_rules'] if not response['data']['info_code'] else "Unavailable"}"),
+                    ft.Text(
+                        f"访问规则: {response['data']['access_rules'] if not response['data']['info_code'] else "Unavailable"}"
+                    ),
                 ]
                 this_loading_animation.visible = False
                 info_listview.visible = True
@@ -588,9 +592,16 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                     ft.Text(f"文档ID: {response['data']['document_id']}"),
                     ft.Text(f"文档标题: {response['data']['title']}"),
                     ft.Text(f"文档大小: {response['data']['size']}"),
-                    ft.Text(f"最后更改时间: {datetime.fromtimestamp(response['data']['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"),
+                    ft.Text(
+                        f"创建于: {datetime.fromtimestamp(response['data']['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"
+                    ),
+                    ft.Text(
+                        f"最后更改时间: {datetime.fromtimestamp(response['data']['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
+                    ),
                     ft.Text(f"父级目录ID: {response['data']['parent_id']}"),
-                    ft.Text(f"访问规则: {response['data']['access_rules'] if not response['data']['info_code'] else "Unavailable"}"),
+                    ft.Text(
+                        f"访问规则: {response['data']['access_rules'] if not response['data']['info_code'] else "Unavailable"}"
+                    ),
                 ]
                 this_loading_animation.visible = False
                 info_listview.visible = True
@@ -624,6 +635,9 @@ def on_document_right_click_menu(e: ft.ControlEvent):
         inner_event.page.open(info_dialog)
         request_document_info(inner_event)
 
+    def set_document_access_rules(inner_event: ft.ControlEvent):
+        pass
+
     menu_listview = ft.ListView(
         controls=[
             ft.Column(
@@ -639,6 +653,12 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                         title=ft.Text("重命名"),
                         subtitle=ft.Text(f"重命名此文件"),
                         on_click=rename_document,
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.SETTINGS_OUTLINED),
+                        title=ft.Text("设置权限"),
+                        subtitle=ft.Text(f"对此文件的访问规则进行变更"),
+                        on_click=set_document_access_rules,
                     ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.INFO_OUTLINED),

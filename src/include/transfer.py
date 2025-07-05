@@ -6,7 +6,7 @@ import os, sys
 
 # from Crypto.Cipher import AES
 from include.log import getCustomLogger
-from include.alert import send_error
+from common.notifications import send_error
 import mmap, hashlib, ssl
 from websockets.sync.client import connect
 import threading

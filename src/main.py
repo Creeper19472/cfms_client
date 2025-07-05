@@ -9,9 +9,6 @@ from pages.login import LoginModel
 from pages.manage import ManageModel
 from pages.about import AboutModel
 import threading
-# from pages.files import FilesModel
-# from common.navigation import MyNavBar
-# from pages.settings import SettingsModel
 
 
 def main(page: ft.Page):
@@ -45,7 +42,7 @@ def main(page: ft.Page):
     page.session.set("download_lock", threading.Lock())
     page.session.set("upload_lock", threading.Lock())
 
-    page.session.set("version", "0.0.6.20250704_alpha")
+    page.session.set("version", "0.0.6.20250705_alpha")
 
     page.go("/connect")
 
