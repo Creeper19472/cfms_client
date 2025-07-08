@@ -83,16 +83,12 @@ class ConnectToServerModel(Model):
             self.page.session.set("server_uri", server_address)
             self.page.title = f"CFMS Client - {server_address}"
 
-            self.ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
-            self.ph.request_permission(PermissionType.STORAGE)
+            # self.ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
+            # self.ph.request_permission(PermissionType.STORAGE)
             self.ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
 
             if (
-                self.ph.check_permission(PermissionType.ACCESS_MEDIA_LOCATION)
-                == PermissionStatus.DENIED
-                or self.ph.check_permission(PermissionType.STORAGE)
-                == PermissionStatus.DENIED
-                or self.ph.check_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
+                self.ph.check_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
                 == PermissionStatus.DENIED
             ):
                 self.page.close()
