@@ -85,12 +85,7 @@ class ConnectToServerModel(Model):
 
             # self.ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
             # self.ph.request_permission(PermissionType.STORAGE)
-            self.ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
-
-            if (
-                self.ph.check_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
-                == PermissionStatus.DENIED
-            ):
+            if self.ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE) == PermissionStatus.DENIED:
                 self.page.close()
 
             self.page.go("/login")
