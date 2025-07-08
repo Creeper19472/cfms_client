@@ -53,10 +53,10 @@ def main(page: ft.Page):
     page.overlay.append(ph)
     page.update()
 
-    if sys.platform != "win32":
-        ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
-        ph.request_permission(PermissionType.STORAGE)
-        ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
+    # if sys.platform != "win32":
+    #     ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
+    #     ph.request_permission(PermissionType.STORAGE)
+    #     ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
 
     page.go("/connect")
 
