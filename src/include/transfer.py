@@ -10,6 +10,7 @@ from common.notifications import send_error
 import mmap, hashlib, ssl
 from websockets.sync.client import connect
 import threading
+import traceback
 
 
 def calculate_sha256(file_path):
@@ -20,7 +21,7 @@ def calculate_sha256(file_path):
         return hashlib.sha256(mmapped_file).hexdigest()
 
 
-def receive_file_from_server(page: ft.Page, task_id: str, filename: str=None) -> None:
+def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) -> None:
     """
     Receives a file from the server over a websocket connection using AES encryption.
     The method performs the following steps:
@@ -76,7 +77,10 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str=None) ->
 
     websocket.send("ready")
 
-    file_path = f"./{filename if filename else sha256[0:17]}"
+    if sys.platform in ["android", "linux"]:
+        file_path = f"/storage/emulated/0/{filename if filename else sha256[0:17]}"
+    else:
+        file_path = f"./{filename if filename else sha256[0:17]}"
 
     try:
         progress_bar = ft.ProgressBar()
@@ -94,19 +98,25 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str=None) ->
         # page.overlay.append(progress_bar)
         page.update()
 
-        with open(file_path, "wb") as f:
-            while True:
-                # Receive encrypted data from the server
-                data = websocket.recv()
-                f.write(data)
-                progress_bar.value = f.tell() / file_size
-                progress_info.value = (
-                    f"{f.tell() / 1024 / 1024:.2f} MB/{file_size / 1024 / 1024:.2f} MB"
-                )
-                page.update()
+        try:
 
-                if not data or len(data) < 8192:
-                    break
+            with open(file_path, "wb") as f:
+                while True:
+                    # Receive encrypted data from the server
+                    data = websocket.recv()
+                    f.write(data)
+                    progress_bar.value = f.tell() / file_size
+                    progress_info.value = (
+                        f"{f.tell() / 1024 / 1024:.2f} MB/{file_size / 1024 / 1024:.2f} MB"
+                    )
+                    page.update()
+
+                    if not data or len(data) < 8192:
+                        break
+
+        except Exception as e:
+            send_error(page, f"Error receiving file: {e}")
+            raise    
 
         # # Write the decrypted file to disk
         # file_path = f"received_{task_id}.bin"
@@ -137,11 +147,11 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str=None) ->
 
         download_lock.release()
 
-    except:
+    except Exception as e:
+        send_error(page, traceback.format_exc(sys.exc_info()[2]))
         raise
 
     websocket.close()
-
 
 def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
 
@@ -159,7 +169,7 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
     except Exception as e:
         upload_lock.release()
         raise NotImplementedError
-    
+
     websocket.send(
         json.dumps(
             {
@@ -187,7 +197,7 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
         },
     }
     websocket.send(json.dumps(task_info, ensure_ascii=False))
-    
+
     received_response = websocket.recv()
     if received_response != "ready":
         page.logger.error(

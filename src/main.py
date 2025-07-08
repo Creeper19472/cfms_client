@@ -8,7 +8,12 @@ from pages.home import HomeModel
 from pages.login import LoginModel
 from pages.manage import ManageModel
 from pages.about import AboutModel
-import threading
+import threading, sys, platform
+from flet_permission_handler.permission_handler import (
+    PermissionHandler,
+    PermissionStatus,
+    PermissionType,
+)
 
 
 def main(page: ft.Page):
@@ -42,7 +47,19 @@ def main(page: ft.Page):
     page.session.set("download_lock", threading.Lock())
     page.session.set("upload_lock", threading.Lock())
 
-    page.session.set("version", "0.0.6.20250705_alpha")
+    page.session.set("version", f"{platform.system()} 0.0.7.20250708_alpha")
+
+    ph = PermissionHandler()
+    page.overlay.append(ph)
+    page.update()
+
+    if sys.platform != "win32":
+        if ph.check_permission(PermissionType.ACCESS_MEDIA_LOCATION) == PermissionStatus.DENIED:
+            ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
+        if ph.check_permission(PermissionType.STORAGE) == PermissionStatus.DENIED:
+            ph.request_permission(PermissionType.STORAGE)
+        if ph.check_permission(PermissionType.MANAGE_EXTERNAL_STORAGE) == PermissionStatus.DENIED:
+            ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
 
     page.go("/connect")
 

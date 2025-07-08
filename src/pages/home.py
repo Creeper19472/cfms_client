@@ -729,8 +729,8 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                         )
                     ),
                     is_three_line=True,
-                    data=document["id"],
-                    on_click=lambda e: open_document(e.page, e.control.data, document["title"]),
+                    data=(document["id"], document["title"]),
+                    on_click=lambda e: open_document(e.page, *e.control.data),
                 ),
                 on_secondary_tap=on_document_right_click_menu,
                 on_long_press_start=on_document_right_click_menu,

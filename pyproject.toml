@@ -1,6 +1,6 @@
 [project]
 name = "cfms-client"
-version = "0.0.6"
+version = "0.0.7"
 description = "The client of Classified File Management System"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -9,6 +9,7 @@ authors = [
 ]
 dependencies = [
   "flet==0.28.3",
+  "flet_permission_handler",
   "flet_model",
   "websockets",
   "pycryptodome"
@@ -50,3 +51,9 @@ package-mode = false
 
 [tool.poetry.group.dev.dependencies]
 flet = {extras = ["all"], version = "0.28.3"}
+
+[tool.flet.android.permission] # --android-permissions
+"android.permission.READ_EXTERNAL_STORAGE" = true
+"android.permission.WRITE_EXTERNAL_STORAGE" = true
+"android.permission.MANAGE_EXTERNAL_STORAGE" = true
+"android.permission.MANAGE_MEDIA" = true
