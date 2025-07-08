@@ -3,7 +3,7 @@ import flet as ft
 from flet_model import Model, route
 import re
 from websockets.sync.client import connect
-import ssl, json
+import ssl, json, os
 from flet_permission_handler import (
     PermissionHandler,
     PermissionStatus,
@@ -87,6 +87,9 @@ class ConnectToServerModel(Model):
             # self.ph.request_permission(PermissionType.STORAGE)
             if self.ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE) == PermissionStatus.DENIED:
                 self.page.close()
+
+            if self.page.platform.value == "windows":
+                os.startfile(os.getcwd())
 
             self.page.go("/login")
 
