@@ -183,7 +183,7 @@ def load_directory(page: ft.Page, folder_id=None):
         file_listview.update()
 
 
-def open_document(page: ft.Page, document_id: str):
+def open_document(page: ft.Page, document_id: str, filename: str):
     response = build_request(
         page,
         action="get_document",
@@ -197,11 +197,8 @@ def open_document(page: ft.Page, document_id: str):
     task_start_time = task_data["start_time"]
     task_end_time = task_data["end_time"]
 
-    def handle_file_receive(page, task_id):
-        receive_file_from_server(page, task_id)
-
     # Create a new thread to handle the file receiving process
-    thread = threading.Thread(target=handle_file_receive, args=(page, task_id))
+    thread = threading.Thread(target=receive_file_from_server, args=(page, task_id, filename))
     thread.start()
     # receive_file_from_server(page, task_id)
 
@@ -733,7 +730,7 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                     ),
                     is_three_line=True,
                     data=document["id"],
-                    on_click=lambda e: open_document(e.page, e.control.data),
+                    on_click=lambda e: open_document(e.page, e.control.data, document["title"]),
                 ),
                 on_secondary_tap=on_document_right_click_menu,
                 on_long_press_start=on_document_right_click_menu,

@@ -46,7 +46,9 @@ class ConnectToServerModel(Model):
         server_address = self.server_address_ref.current.value
         # print(server_address)
         # Regular expression to match "wss://<valid server address>"
-        wss_pattern = r"^wss:\/\/[a-zA-Z0-9.-]+(:[0-9]+)?$"
+        wss_pattern_v4 = r"^wss:\/\/[a-zA-Z0-9.-]+(:[0-9]+)?$"
+        wss_pattern_v6 = r"^wss:\/\/\[(?:(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?::[0-9a-fA-F]{1,4}){1,6}|:(?::[0-9a-fA-F]{1,4}){1,7})\](?::[0-9]{1,5})?$"
+        wss_pattern = wss_pattern_v4 + "|" + wss_pattern_v6
 
         # Check if the server address matches the pattern
         if not server_address or not re.match(wss_pattern, server_address):
@@ -106,9 +108,9 @@ class ConnectToServerModel(Model):
             color=TEXT_COLOR,
             hint_style=ft.TextStyle(color=PLACEHOLDER_COLOR),
             border_radius=8,
-            value="wss://localhost:5104", # default
+            value="wss://localhost:5104",  # default
             autofocus=True,
-            on_submit=self.connect_button_clicked  # Listen for the enter key event
+            on_submit=self.connect_button_clicked,  # Listen for the enter key event
         )
 
         container = ft.Container(
@@ -134,7 +136,7 @@ class ConnectToServerModel(Model):
         )
 
         explanation_text = ft.Text(
-            self.page.session.get("version"), # "0.0.3.20250627_alpha"
+            self.page.session.get("version"),  # "0.0.3.20250627_alpha"
             color=PLACEHOLDER_COLOR,
             size=12,
             text_align=ft.TextAlign.CENTER,

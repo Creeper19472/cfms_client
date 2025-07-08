@@ -20,7 +20,7 @@ def calculate_sha256(file_path):
         return hashlib.sha256(mmapped_file).hexdigest()
 
 
-def receive_file_from_server(page: ft.Page, task_id: str) -> None:
+def receive_file_from_server(page: ft.Page, task_id: str, filename: str=None) -> None:
     """
     Receives a file from the server over a websocket connection using AES encryption.
     The method performs the following steps:
@@ -76,7 +76,7 @@ def receive_file_from_server(page: ft.Page, task_id: str) -> None:
 
     websocket.send("ready")
 
-    file_path = f"./{sha256[0:17]}"
+    file_path = f"./{filename if filename else sha256[0:17]}"
 
     try:
         progress_bar = ft.ProgressBar()
