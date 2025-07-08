@@ -482,7 +482,7 @@ def on_document_right_click_menu(e: ft.ControlEvent):
         response = build_request(
             inner_event.page,
             action="delete_document",
-            data={"document_id": e.control.content.data},
+            data={"document_id": e.control.content.data[0]},
             username=inner_event.page.session.get("username"),
             token=inner_event.page.session.get("token"),
         )
@@ -511,7 +511,7 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                 inner_event.page,
                 action="rename_document",
                 data={
-                    "document_id": e.control.content.data,
+                    "document_id": e.control.content.data[0],
                     "new_title": document_title_field.value,
                 },
                 username=e.page.session.get("username"),
@@ -577,7 +577,7 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                 inner_event.page,
                 action="get_document_info",
                 data={
-                    "document_id": e.control.content.data,
+                    "document_id": e.control.content.data[0],
                 },
                 username=e.page.session.get("username"),
                 token=e.page.session.get("token"),

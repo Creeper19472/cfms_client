@@ -77,7 +77,7 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) 
 
     websocket.send("ready")
 
-    if sys.platform in ["android", "linux"]:
+    if page.platform.value in ["android"]:
         file_path = f"/storage/emulated/0/{filename if filename else sha256[0:17]}"
     else:
         file_path = f"./{filename if filename else sha256[0:17]}"
