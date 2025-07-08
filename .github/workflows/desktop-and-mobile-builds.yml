@@ -5,11 +5,13 @@ on:
   push:
     branches:
       - master
+      - dev
 
   # Runs on pull request events that target one of the below branches
   pull_request:
     branches:
       - master
+      - dev
 
   # Allows you to run this workflow manually from the Actions tab of the repository
   workflow_dispatch:

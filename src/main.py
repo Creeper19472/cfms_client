@@ -47,19 +47,7 @@ def main(page: ft.Page):
     page.session.set("download_lock", threading.Lock())
     page.session.set("upload_lock", threading.Lock())
 
-    page.session.set("version", f"{platform.system()} 0.0.7.20250708_alpha")
-
-    ph = PermissionHandler()
-    page.overlay.append(ph)
-    page.update()
-
-    if sys.platform != "win32":
-        if ph.check_permission(PermissionType.ACCESS_MEDIA_LOCATION) == PermissionStatus.DENIED:
-            ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
-        if ph.check_permission(PermissionType.STORAGE) == PermissionStatus.DENIED:
-            ph.request_permission(PermissionType.STORAGE)
-        if ph.check_permission(PermissionType.MANAGE_EXTERNAL_STORAGE) == PermissionStatus.DENIED:
-            ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
+    page.session.set("version", f"{page.platform.value} 0.0.7.20250708_alpha")
 
     page.go("/connect")
 
