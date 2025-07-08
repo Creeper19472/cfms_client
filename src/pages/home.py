@@ -156,6 +156,7 @@ def open_create_directory_form(page: ft.Page):
 
 def load_directory(page: ft.Page, folder_id=None):
     global current_directory_id
+    _fallback_directory_id = current_directory_id
     current_directory_id = folder_id
 
     loading_animation.visible = True
@@ -172,6 +173,9 @@ def load_directory(page: ft.Page, folder_id=None):
     loading_animation.visible = False
     page.update()
     if (code := response["code"]) != 200:
+        update_file_controls([], [], _fallback_directory_id)
+        file_listview.visible = True
+        file_listview.update()
         send_error(page, f"加载失败: ({code}) {response['message']}")
     else:
         update_file_controls(
