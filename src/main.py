@@ -8,7 +8,7 @@ from pages.home import HomeModel
 from pages.login import LoginModel
 from pages.manage import ManageModel
 from pages.about import AboutModel
-import threading, sys, platform
+import threading, sys, platform, os
 from flet_permission_handler.permission_handler import (
     PermissionHandler,
     PermissionStatus,
@@ -47,7 +47,7 @@ def main(page: ft.Page):
     page.session.set("download_lock", threading.Lock())
     page.session.set("upload_lock", threading.Lock())
 
-    page.session.set("version", f"{page.platform.value} 0.0.7.20250708_alpha")
+    page.session.set("version", f"{page.platform.value} 0.0.7.20250708_alpha {os.getcwd()}")
 
     page.go("/connect")
 

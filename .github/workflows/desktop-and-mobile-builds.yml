@@ -1,17 +1,17 @@
 name: Desktop and Mobile Builds (Linux, macOS, Windows, AAB, APK, IPA)
 
 on:
-  # Runs on push to any of the below branches
-  push:
-    branches:
-      - master
-      - dev
+  # # Runs on push to any of the below branches
+  # push:
+  #   branches:
+  #     - master
+  #     - dev
 
-  # Runs on pull request events that target one of the below branches
-  pull_request:
-    branches:
-      - master
-      - dev
+  # # Runs on pull request events that target one of the below branches
+  # pull_request:
+  #   branches:
+  #     - master
+  #     - dev
 
   # Allows you to run this workflow manually from the Actions tab of the repository
   workflow_dispatch:
