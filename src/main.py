@@ -49,15 +49,6 @@ def main(page: ft.Page):
 
     page.session.set("version", f"{platform.system()} 0.0.7.20250708_alpha")
 
-    ph = PermissionHandler()
-    page.overlay.append(ph)
-    page.update()
-
-    # if sys.platform != "win32":
-    #     ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
-    #     ph.request_permission(PermissionType.STORAGE)
-    #     ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
-
     page.go("/connect")
 
 
