@@ -54,12 +54,9 @@ def main(page: ft.Page):
     page.update()
 
     if sys.platform != "win32":
-        if ph.check_permission(PermissionType.ACCESS_MEDIA_LOCATION) == PermissionStatus.DENIED:
-            ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
-        if ph.check_permission(PermissionType.STORAGE) == PermissionStatus.DENIED:
-            ph.request_permission(PermissionType.STORAGE)
-        if ph.check_permission(PermissionType.MANAGE_EXTERNAL_STORAGE) == PermissionStatus.DENIED:
-            ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
+        ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
+        ph.request_permission(PermissionType.STORAGE)
+        ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
 
     page.go("/connect")
 
