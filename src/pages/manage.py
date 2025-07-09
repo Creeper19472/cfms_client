@@ -31,10 +31,10 @@ class ManagementNavBar(ft.NavigationBar):
         control: ManagementNavBar = e.control
         match control.selected_index:
             case 0:  # Manage Accounts
-                refresh_user_list(e.page)
                 manage_groups_container.visible = False
                 manage_accounts_container.visible = True
                 e.page.update()
+                refresh_user_list(e.page)
 
             case 1:
                 manage_accounts_container.visible = False

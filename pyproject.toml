@@ -38,7 +38,7 @@ path = "src"
 # and `--android-signing-key-password` options or
 # FLET_ANDROID_SIGNING_KEY_STORE_PASSWORD
 # and FLET_ANDROID_SIGNING_KEY_PASSWORD environment variables.
-key_store = "keystore.jks" # --android-signing-key-store
+# key_store = "keystore.jks" # --android-signing-key-store
 key_alias = "key0"
 
 [tool.uv]

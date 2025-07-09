@@ -152,11 +152,12 @@ jobs:
 
     - name: Extract keystore
       run: |
-        echo ${{ secrets.ENCODED_KEYSTORE }} | base64 -di > keystore.jks
+        mkdir -p ./build/flutter/android/app
+        echo ${{ secrets.ENCODED_KEYSTORE }} | base64 -di > ./build/flutter/android/app/keystore.jks
 
     - name: Flet Build APK
       run: |
-        flet build apk --verbose --android-signing-key-store-password ${{ secrets.FLET_ANDROID_SIGNING_KEY_STORE_PASSWORD }} --android-signing-key-password ${{ secrets.FLET_ANDROID_SIGNING_KEY_PASSWORD }}
+        flet build apk --verbose --android-signing-key-store keystore.jks --android-signing-key-alias key0 --android-signing-key-store-password ${{ secrets.FLET_ANDROID_SIGNING_KEY_STORE_PASSWORD }} --android-signing-key-password ${{ secrets.FLET_ANDROID_SIGNING_KEY_PASSWORD }}
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4.3.4
