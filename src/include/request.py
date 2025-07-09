@@ -56,7 +56,8 @@ def build_request(
         server_uri = page.session.get("server_uri")
         assert server_uri
 
-        page.session.set("websocket", connect(server_uri, ssl=ssl_context))
+        websocket = connect(server_uri, ssl=ssl_context)
+        page.session.set("websocket", websocket)
 
         # 重发
         websocket.send(request_json)
