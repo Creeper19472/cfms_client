@@ -40,7 +40,7 @@ class MyNavBar(ft.NavigationBar):
         nav_destinations = [
             ft.NavigationBarDestination(icon=ft.Icons.FOLDER, label="Files"),
             ft.NavigationBarDestination(icon=ft.Icons.HOME, label="Home"),
-            ft.NavigationBarDestination(icon=ft.Icons.SETTINGS, label="Settings"),
+            ft.NavigationBarDestination(icon=ft.Icons.MORE_HORIZ, label="More"),
         ]
 
         super().__init__(
@@ -836,7 +836,7 @@ settings_container = ft.Container(
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.SETTINGS),
                         title=ft.Text("设置"),
-                        on_click=lambda e: print("Navigate to Settings"),
+                        on_click=lambda e: e.page.go("/settings"),
                     ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.INFO),

@@ -8,6 +8,7 @@ from pages.home import HomeModel
 from pages.login import LoginModel
 from pages.manage import ManageModel
 from pages.about import AboutModel
+from pages.settings import SettingsModel
 import threading, sys, platform, os
 from flet_permission_handler.permission_handler import (
     PermissionHandler,
@@ -42,10 +43,10 @@ def main(page: ft.Page):
     page.safe_area = True
     page.notch_shape = ft.NotchShape.AUTO
 
-    page.websocket: ClientConnection
     page.logger = getCustomLogger("client")
     page.session.set("download_lock", threading.Lock())
     page.session.set("upload_lock", threading.Lock())
+    page.session.set("communication_lock", threading.Lock())
 
     page.session.set("version", f"0.0.8.20250709_alpha {page.platform.value}")
 

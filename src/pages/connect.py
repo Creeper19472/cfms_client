@@ -9,6 +9,7 @@ from flet_permission_handler import (
     PermissionStatus,
     PermissionType,
 )
+from common.notifications import send_error
 
 # Enhanced Colors & Styles
 PRIMARY_COLOR = "#4f46e5"  # Deep indigo for primary actions
@@ -70,7 +71,9 @@ class ConnectToServerModel(Model):
             ssl_context.verify_mode = ssl.CERT_NONE
 
             try:
-                self.page.websocket = connect(server_address, ssl=ssl_context)
+                self.page.session.set(
+                    "websocket", connect(server_address, ssl=ssl_context)
+                )
             except Exception as e:
                 self.connect_button.visible = True
                 self.loading_animation.visible = False
@@ -85,8 +88,17 @@ class ConnectToServerModel(Model):
 
             # self.ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
             # self.ph.request_permission(PermissionType.STORAGE)
-            if self.ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE) == PermissionStatus.DENIED:
-                self.page.close()
+            if (
+                self.ph.request_permission(PermissionType.MANAGE_EXTERNAL_STORAGE)
+                == PermissionStatus.DENIED
+            ):
+                if self.page.platform.value not in ["ios", "android"]:
+                    self.page.window.close()
+                else:
+                    send_error(
+                        self.page,
+                        "授权失败，您将无法正常下载文件。请在设置中允许应用访问您的文件。",
+                    )
 
             if self.page.platform.value == "windows":
                 os.startfile(os.getcwd())

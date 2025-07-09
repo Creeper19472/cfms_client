@@ -13,7 +13,7 @@ class ManagementNavBar(ft.NavigationBar):
             ),
             ft.NavigationBarDestination(
                 icon=ft.Icons.ADMIN_PANEL_SETTINGS_OUTLINED,
-                label="User Groups & Permissions",
+                label="Groups",
             ),
             ft.NavigationBarDestination(
                 icon=ft.Icons.SETTINGS_APPLICATIONS, label="Settings"
@@ -261,9 +261,9 @@ def on_user_right_click_menu(e: ft.ControlEvent):
             for each_group in all_group_list:
                 dialog_group_listview.controls.append(
                     ft.Checkbox(
-                        label=each_group, # 后面可能改成显示名称
+                        label=each_group,  # 后面可能改成显示名称
                         data=each_group,
-                        on_change=None, # 提交前什么都不处理
+                        on_change=None,  # 提交前什么都不处理
                         value=each_group in user_membership_list,
                     )
                 )
@@ -331,7 +331,6 @@ def on_user_right_click_menu(e: ft.ControlEvent):
 
         inner_event.page.open(change_dialog)
         _refresh_group_list(inner_event)
-        
 
     menu_listview = ft.ListView(
         controls=[
@@ -413,6 +412,9 @@ def open_create_user_form(e: ft.ControlEvent):
         inner_event.page.update()
 
         username_field.disabled = True
+        nickname_field.disabled = True
+        password_field.disabled = True
+
         cancel_button.disabled = True
         this_loading_animation.visible = True
         dialog.modal = True
@@ -439,7 +441,9 @@ def open_create_user_form(e: ft.ControlEvent):
         else:
             refresh_user_list(inner_event.page)
 
-        inner_event.page.close(dialog)
+        inner_event.page.close(
+            dialog
+        )  # 反正要关闭对话框，那么是否要恢复 .disabled = False 都无所谓了
 
     this_loading_animation = ft.ProgressRing(visible=False)
 
@@ -558,6 +562,7 @@ def open_create_group_form(e: ft.ControlEvent):
         inner_event.page.update()
 
         group_name_field.disabled = True
+        display_name_field.disabled = True
         cancel_button.disabled = True
         this_loading_animation.visible = True
         dialog.modal = True

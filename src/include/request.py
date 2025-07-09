@@ -2,6 +2,8 @@ import json, time
 import ssl
 import flet as ft
 from websockets.sync.client import connect
+from common.notifications import send_error
+import threading
 
 def build_request(
     page: ft.Page,
@@ -10,8 +12,11 @@ def build_request(
     message: str = "",
     username=None,
     token=None,
-    _new_connection=False
 ) -> dict:
+    
+    communication_lock = page.session.get("communication_lock")
+    assert isinstance(communication_lock, threading.Lock)
+
     request = {
         "action": action,
         "data": data,
@@ -22,7 +27,7 @@ def build_request(
 
     request_json = json.dumps(request, ensure_ascii=False)
     
-    if _new_connection:
+    if not communication_lock.acquire(timeout=0):
         ssl_context = ssl.create_default_context()
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
@@ -36,10 +41,30 @@ def build_request(
             raise
 
     else:
-        websocket = page.websocket # type: ignore
+        websocket = page.session.get("websocket")
         assert websocket
     
-    websocket.send(request_json)
-    response_json = websocket.recv()
+    try:
+        websocket.send(request_json)
+        response_json = websocket.recv()
+    except:
+        # send_error(page, "连接中断，正在尝试重新连接。")
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
+        server_uri = page.session.get("server_uri")
+        assert server_uri
+
+        page.session.set("websocket", connect(server_uri, ssl=ssl_context))
+
+        # 重发
+        websocket.send(request_json)
+        response_json = websocket.recv()
+
+    try:
+        communication_lock.release()
+    except RuntimeError:
+        pass
 
     return json.loads(response_json)
