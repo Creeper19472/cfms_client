@@ -660,6 +660,7 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                         title=ft.Text("设置权限"),
                         subtitle=ft.Text(f"对此文件的访问规则进行变更"),
                         on_click=set_document_access_rules,
+                        visible="set_access_rules" in e.page.session.get("user_permissions")
                     ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.INFO_OUTLINED),
