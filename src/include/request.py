@@ -14,8 +14,8 @@ def build_request(
     token=None,
 ) -> dict:
     
-    communication_lock = page.session.get("communication_lock")
-    assert isinstance(communication_lock, threading.Lock)
+    communication_lock: threading.Lock = page.session.get("communication_lock") # type: ignore
+    # assert isinstance(communication_lock)
 
     request = {
         "action": action,
