@@ -1,6 +1,6 @@
 [project]
 name = "cfms-client"
-version = "0.0.8"
+version = "0.0.10"
 description = "The client of Classified File Management System"
 readme = "README.md"
 requires-python = ">=3.13.5"
@@ -12,7 +12,8 @@ dependencies = [
   "flet_permission_handler",
   "flet_model",
   "websockets",
-  "pycryptodome"
+  "pycryptodome",
+  "requests"
 ]
 
 [tool.flet]

@@ -3,6 +3,7 @@ from flet_model import Model, route
 from include.request import build_request
 from common.notifications import send_error
 import requests, os, time
+import threading
 
 GITHUB_REPO = "Creeper19472/cfms_client"
 # GITHUB_REPO = "mihonapp/mihon"
@@ -227,6 +228,8 @@ class AboutModel(Model):
         else:
             time.sleep(1)
             self.suc_environ_unavailable_text.visible = True
+            # self.suc_upgrade_button.data = "https://github.com/mihonapp/mihon/releases/download/v0.18.0/mihon-x86_64-v0.18.0.apk"
+            # self.do_release_upgrade()  # debug
 
         self.suc_update_button.disabled = False
         self.suc_progress_ring.visible = False
@@ -234,19 +237,82 @@ class AboutModel(Model):
         self.page.update()
 
     def do_release_upgrade(self):
-        if not self.suc_upgrade_button.data:
+        if not (download_url := self.suc_upgrade_button.data):
             return
+        assert type(download_url) == str
+        save_filename = download_url.split("/")[-1]
 
         self.suc_upgrade_button.disabled = True
         self.page.update()
 
+        def _stop_upgrade(e: ft.ControlEvent):
+            download_thread.stop()
+            e.page.close(upgrade_dialog)
+
+        upgrade_progress = ft.ProgressBar()
+        upgrade_progress_text = ft.Text(value="正在准备下载")
         upgrade_dialog = ft.AlertDialog(
             modal=True,
+            title=ft.Text("更新"),
+            content=ft.Column(
+                controls=[upgrade_progress, upgrade_progress_text],
+                # spacing=15,
+                width=400,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
             actions=[
-                ft.TextButton("取消", on_click=lambda e: e.page.close(upgrade_dialog)),
+                ft.TextButton("取消", on_click=_stop_upgrade),
             ],
+            scrollable=True,
         )
         self.page.open(upgrade_dialog)
+
+        class UpdateDownloadThread(threading.Thread):
+            def __init__(self, download_url: str, save_filename: str, page: ft.Page):
+                super().__init__()
+                self.download_url = download_url
+                self.save_filename = save_filename
+                self.page = page
+                self._stop_event = threading.Event()
+
+            def run(self):
+                if self._download_update():
+                    # print(os.getcwd())
+                    os.startfile(self.save_filename)
+
+            def stop(self):
+                self._stop_event.set()
+
+            def _download_update(self):
+                response = requests.get(self.download_url, stream=True)
+                if response.status_code == 200:
+                    total_size = response.headers["content-length"]
+                    # print(response.headers)
+                    with open(f"./{self.save_filename}", "wb") as f:
+                        for chunk in response.iter_content(chunk_size=2048):
+                            if self._stop_event.is_set():
+                                break
+                            if chunk:
+                                f.write(chunk)
+                                upgrade_progress.value = (
+                                    int(f.tell() * 100 / int(total_size)) / 100
+                                )
+                                upgrade_progress_text.value = f"{int(f.tell() * 100 / int(total_size))}% ({int(f.tell())} / {total_size})"
+                                self.page.update()
+                    if self._stop_event.is_set():
+                        try:
+                            os.remove(f"./{self.save_filename}")
+                        except FileNotFoundError:
+                            pass
+                        return False
+                    else:
+                        return True
+
+                return False
+
+        # Start the download in a separate thread
+        download_thread = UpdateDownloadThread(download_url, save_filename, self.page)
+        download_thread.start()
 
         self.suc_upgrade_button.disabled = False
         self.page.update()

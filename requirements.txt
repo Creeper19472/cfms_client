@@ -3,3 +3,4 @@ flet_model
 flet_permission_handler
 websockets
 pycryptodome
+requests

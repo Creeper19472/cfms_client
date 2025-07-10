@@ -48,8 +48,8 @@ def main(page: ft.Page):
     page.session.set("upload_lock", threading.Lock())
     page.session.set("communication_lock", threading.Lock())
 
-    page.session.set("version", f"0.0.9.20250710_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.0.9")
+    page.session.set("version", f"0.0.10.20250711_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.0.10")
 
     page.go("/connect")
 
