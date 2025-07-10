@@ -100,7 +100,7 @@ class ConnectToServerModel(Model):
                         "授权失败，您将无法正常下载文件。请在设置中允许应用访问您的文件。",
                     )
 
-            if self.page.platform.value == "windows":
+            if self.page.platform.value == "windows" and os.environ.get("FLET_APP_CONSOLE"):
                 os.startfile(os.getcwd())
 
             self.page.go("/login")

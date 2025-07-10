@@ -133,6 +133,7 @@ class LoginModel(Model):
 
             if (code:=response["code"]) == 200:
                 self.page.session.set("username", self.username_field.value)
+                self.page.session.set("nickname", response["data"].get("nickname"))
                 self.page.session.set("token", response["data"]["token"]) 
                 self.page.session.set("user_permissions", response["data"]["permissions"])
                 self.page.session.set("user_groups", response["data"]["groups"])
@@ -140,7 +141,7 @@ class LoginModel(Model):
                 if "manage_system" in self.page.session.get("user_permissions"):
                     navigation_bar = self.page.session.get("navigation_bar")
                     navigation_bar.destinations.append(
-                        ft.NavigationBarDestination(icon=ft.Icons.CLOUD_CIRCLE, label="Manage System")
+                        ft.NavigationBarDestination(icon=ft.Icons.CLOUD_CIRCLE, label="Manage")
                     )
 
                 self.login_button.visible = True

@@ -68,6 +68,13 @@ class MyNavBar(ft.NavigationBar):
                 files_container.visible = False
                 home_container.visible = False
                 settings_container.visible = True
+                settings_avatar.content = ft.Text(
+                    self.page.session.get("username")[0].upper()
+                )
+                _nickname = self.page.session.get("nickname")
+                settings_username_display.value = (
+                    _nickname if _nickname else self.page.session.get("username")
+                )
                 self.page.update()
             case 3:
                 control.selected_index = control.last_selected_index
@@ -202,7 +209,9 @@ def open_document(page: ft.Page, document_id: str, filename: str):
     task_end_time = task_data["end_time"]
 
     # Create a new thread to handle the file receiving process
-    thread = threading.Thread(target=receive_file_from_server, args=(page, task_id, filename))
+    thread = threading.Thread(
+        target=receive_file_from_server, args=(page, task_id, filename)
+    )
     thread.start()
     # receive_file_from_server(page, task_id)
 
@@ -660,7 +669,8 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                         title=ft.Text("设置权限"),
                         subtitle=ft.Text(f"对此文件的访问规则进行变更"),
                         on_click=set_document_access_rules,
-                        visible="set_access_rules" in e.page.session.get("user_permissions")
+                        visible="set_access_rules"
+                        in e.page.session.get("user_permissions"),
                     ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.INFO_OUTLINED),
@@ -816,13 +826,24 @@ home_container = ft.Container(
     visible=True,
 )
 
+settings_avatar = ft.CircleAvatar(
+    # foreground_image_src="https://avatars.githubusercontent.com/u/_5041459?s=88&v=4",
+    content=ft.Text(),
+)
+settings_username_display = ft.Text(color=ft.Colors.WHITE)
+
 settings_container = ft.Container(
     content=ft.Column(
         controls=[
             # Avatar frame
-            ft.CircleAvatar(
-                # foreground_image_src="https://avatars.githubusercontent.com/u/_5041459?s=88&v=4",
-                content=ft.Text("A"),
+            ft.Row(
+                controls=[
+                    settings_avatar,
+                    ft.Column(
+                        controls=[settings_username_display, ft.Text("星垂平野阔，月涌大江流。")],
+                        spacing=0
+                    ),
+                ]
             ),
             ft.Divider(),
             # Menu entries below the avatar

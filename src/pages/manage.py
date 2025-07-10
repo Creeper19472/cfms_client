@@ -219,6 +219,11 @@ def on_user_right_click_menu(e: ft.ControlEvent):
         this_loading_animation = ft.ProgressRing(visible=False)
 
         def _refresh_group_list(secondary_inner_event: ft.ControlEvent):
+
+            dialog_group_listview.disabled = True
+            refresh_button.disabled = True
+            e.page.update()
+
             # 重置列表
             dialog_group_listview.controls = []
 
@@ -268,9 +273,15 @@ def on_user_right_click_menu(e: ft.ControlEvent):
                     )
                 )
 
+            dialog_group_listview.disabled = False
+            refresh_button.disabled = False
             e.page.update()
 
         def _submit_group_changes(secondary_inner_event: ft.ControlEvent):
+
+            dialog_group_listview.disabled = True
+            dialog_group_listview.update()
+
             # ... "data": {"latest": []}
             # 提交更改后所有勾选的用户组
             to_submit_list = []
@@ -303,15 +314,16 @@ def on_user_right_click_menu(e: ft.ControlEvent):
         cancel_button = ft.TextButton(
             "取消", on_click=lambda _: inner_event.page.close(change_dialog)
         )
+        refresh_button = ft.IconButton(
+            ft.Icons.REFRESH,
+            on_click=_refresh_group_list,
+        )
 
         change_dialog = ft.AlertDialog(
             title=ft.Row(
                 controls=[
                     ft.Text("更改用户组"),
-                    ft.IconButton(
-                        ft.Icons.REFRESH,
-                        on_click=_refresh_group_list,
-                    ),
+                    refresh_button,
                 ]
             ),
             # title_padding=ft.padding.all(25),
@@ -741,6 +753,142 @@ def on_group_right_click_menu(e: ft.ControlEvent):
 
         inner_event.page.open(new_dialog)
 
+    def set_group_permissions(inner_event: ft.ControlEvent):
+        return
+        dialog.open = False
+        e.page.update()
+
+        # 初始化列表
+        dialog_permission_listview = ft.ListView(expand=True)
+
+        this_loading_animation = ft.ProgressRing(visible=False)
+
+        def _refresh_group_list(secondary_inner_event: ft.ControlEvent):
+
+            dialog_permission_listview.disabled = True
+            refresh_button.disabled = True
+            e.page.update()
+
+            # 重置列表
+            dialog_permission_listview.controls = []
+
+            # 拉取用户组列表
+            group_list_response = build_request(
+                inner_event.page,
+                action="list_groups",
+                data={},
+                username=e.page.session.get("username"),
+                token=e.page.session.get("token"),
+            )
+            if (code := group_list_response["code"]) != 200:
+                send_error(
+                    inner_event.page,
+                    f"拉取用户组列表失败: ({code}) {group_list_response['message']}",
+                )
+                return
+
+            all_group_list = [
+                group["name"] for group in group_list_response["data"]["groups"]
+            ]
+
+            user_data_response = build_request(
+                inner_event.page,
+                action="get_user_info",
+                data={
+                    "username": e.control.data,
+                },
+                username=e.page.session.get("username"),
+                token=e.page.session.get("token"),
+            )
+            if (code := user_data_response["code"]) != 200:
+                send_error(
+                    inner_event.page,
+                    f"拉取用户信息失败: ({code}) {user_data_response['message']}",
+                )
+                return
+            user_membership_list = user_data_response["data"]["groups"]
+
+            for each_group in all_group_list:
+                dialog_permission_listview.controls.append(
+                    ft.Checkbox(
+                        label=each_group,  # 后面可能改成显示名称
+                        data=each_group,
+                        on_change=None,  # 提交前什么都不处理
+                        value=each_group in user_membership_list,
+                    )
+                )
+
+            dialog_permission_listview.disabled = False
+            refresh_button.disabled = False
+            e.page.update()
+
+        def _submit_group_changes(secondary_inner_event: ft.ControlEvent):
+
+            dialog_permission_listview.disabled = True
+            dialog_permission_listview.update()
+
+            # ... "data": {"latest": []}
+            # 提交更改后所有勾选的用户组
+            to_submit_list = []
+            for checkbox in dialog_permission_listview.controls:
+                assert isinstance(checkbox, ft.Checkbox)
+                if checkbox.value == True:
+                    to_submit_list.append(checkbox.data)
+
+            response = build_request(
+                inner_event.page,
+                action="change_user_groups",
+                data={
+                    "username": e.control.data,
+                    "groups": to_submit_list,
+                },
+                username=e.page.session.get("username"),
+                token=e.page.session.get("token"),
+            )
+            if (code := response["code"]) != 200:
+                send_error(
+                    inner_event.page,
+                    f"更改用户组失败: ({code}) {response['message']}",
+                )
+            else:
+                refresh_user_list(inner_event.page)
+
+            e.page.close(change_dialog)
+
+        submit_button = ft.TextButton("提交", on_click=_submit_group_changes)
+        cancel_button = ft.TextButton(
+            "取消", on_click=lambda _: inner_event.page.close(change_dialog)
+        )
+        refresh_button = ft.IconButton(
+            ft.Icons.REFRESH,
+            on_click=_refresh_group_list,
+        )
+
+        change_dialog = ft.AlertDialog(
+            title=ft.Row(
+                controls=[
+                    ft.Text("更改用户组"),
+                    refresh_button,
+                ]
+            ),
+            # title_padding=ft.padding.all(25),
+            content=ft.Column(
+                controls=[this_loading_animation, dialog_permission_listview],
+                # spacing=15,
+                width=400,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            actions=[
+                submit_button,
+                cancel_button,
+            ],
+            scrollable=True,
+            # alignment=ft.MainAxisAlignment.CENTER,
+        )
+
+        inner_event.page.open(change_dialog)
+        _refresh_group_list(inner_event)
+
     menu_listview = ft.ListView(
         controls=[
             ft.Column(
@@ -756,6 +904,12 @@ def on_group_right_click_menu(e: ft.ControlEvent):
                         title=ft.Text("重命名"),
                         subtitle=ft.Text(f"为用户组更改展示的名称"),
                         on_click=rename_group,
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.SETTINGS_OUTLINED),
+                        title=ft.Text("设置权限"),
+                        subtitle=ft.Text(f"为用户组更改拥有的权限"),
+                        on_click=set_group_permissions,
                     ),
                 ],
             )

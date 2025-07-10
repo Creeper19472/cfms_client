@@ -42,10 +42,14 @@ def open_change_passwd_dialog(e: ft.ControlEvent):
     new_passwd_field = ft.TextField(
         label="新密码",
         on_submit=request_set_passwd,
+        password=True,
+        can_reveal_password=True,
     )
     old_passwd_field = ft.TextField(
         label="旧密码",
         on_submit=lambda _: new_passwd_field.focus(),
+        password=True,
+        can_reveal_password=True,
     )
     
     submit_button = ft.ElevatedButton(
