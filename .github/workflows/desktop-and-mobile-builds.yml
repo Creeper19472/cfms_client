@@ -94,21 +94,27 @@ jobs:
       run: |
         flet build windows --verbose --no-rich-output
 
-    - name: Upload Windows Artifact
-      uses: actions/upload-artifact@v4.3.4
-      with:
-        name: windows-build-artifact
-        path: build/windows
-        if-no-files-found: warn
-        overwrite: false
+    # - name: Upload Windows Artifact
+    #   uses: actions/upload-artifact@v4.3.4
+    #   with:
+    #     name: windows-build-artifact
+    #     path: build/windows
+    #     if-no-files-found: warn
+    #     overwrite: false
+
+    - name: Pack Release
+      run: |
+        zip -r build/cfms-cli-${{ github.ref }}-windows.zip build/windows
+        sha1sum build/cfms-cli-${{ github.ref }}-windows.zip > build/cfms-cli-${{ github.ref }}-windows.zip.sha1
 
     - name: Release
       uses: softprops/action-gh-release@v2
       if: github.ref_type == 'tag'
       with:
         files: |
-          build/windows
-        overwrite_files: true
+          build/windows/cfms-cli-${{ github.ref }}-windows.zip
+          build/cfms-cli-${{ github.ref }}-windows.zip.sha1
+        # overwrite_files: true
         generate_release_notes: true
 
   # build-aab:
@@ -185,5 +191,5 @@ jobs:
         files: |
           build/apk/app-release.apk
           build/apk/app-release.apk.sha1
-        overwrite_files: true
+        # overwrite_files: true
         generate_release_notes: true
