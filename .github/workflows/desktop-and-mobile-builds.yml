@@ -103,11 +103,11 @@ jobs:
     #     overwrite: false
 
     - name: Archive Release
-      uses: thedoctor0/zip-release@0.7.5
+      uses: thedoctor0/zip-release@0.7.6
       with:
         type: 'zip'
         filename: 'cfms-cli-${{ github.ref }}-windows.zip'
-        directory: 'build/windows'
+        path: 'build/windows'
         exclusions: '*.git* /*node_modules/* .editorconfig'
 
     - name: Release
