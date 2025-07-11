@@ -3,9 +3,11 @@ name: Desktop and Mobile Builds (Linux, macOS, Windows, AAB, APK, IPA)
 on:
   # Runs on push to any of the below branches
   push:
-    branches:
-      - master
-      - dev
+    # branches:
+    #   - master
+    #   - dev
+    tags:
+      - "v*.*.*"
 
   # # Runs on pull request events that target one of the below branches
   # pull_request:
