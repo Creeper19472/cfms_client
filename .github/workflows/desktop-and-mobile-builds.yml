@@ -115,7 +115,7 @@ jobs:
       if: github.ref_type == 'tag'
       with:
         files: |
-          build/windows/cfms-cli-${{ github.ref }}-windows.zip
+          cfms-cli-${{ github.ref }}-windows.zip
         # overwrite_files: true
         generate_release_notes: true
 

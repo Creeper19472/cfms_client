@@ -219,6 +219,11 @@ class AboutModel(Model):
                         self.suc_upgrade_button.visible = True
                         self.suc_release_info.visible = True
                         break  # releases 方面应当保证匹配结果唯一，如果唯一的话就没必要继续匹配了
+
+                # 判断是否有找到对应架构的包
+                if not self.suc_upgrade_button.visible:
+                    self.suc_unavailable_text.value = "未在最新版本中找到对应架构的包"
+                    self.suc_unavailable_text.visible = True
             else:
                 self.suc_unavailable_text.value = "没有找到更新：不支持的架构"
                 self.suc_unavailable_text.visible = True
