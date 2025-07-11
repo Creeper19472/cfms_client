@@ -15,7 +15,9 @@ from flet_permission_handler.permission_handler import (
     PermissionStatus,
     PermissionType,
 )
+# import os
 
+# print(os.environ)
 
 def main(page: ft.Page):
     # Page settings
@@ -48,8 +50,8 @@ def main(page: ft.Page):
     page.session.set("upload_lock", threading.Lock())
     page.session.set("communication_lock", threading.Lock())
 
-    page.session.set("version", f"0.0.12.20250711_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.0.12")
+    page.session.set("version", f"0.0.13.20250712_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.0.13")
 
     page.go("/connect")
 

@@ -1,6 +1,7 @@
 flet[all]
 flet_model
 flet_permission_handler
+flet_open_file
 websockets
 pycryptodome
 requests
