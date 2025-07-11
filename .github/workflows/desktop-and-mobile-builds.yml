@@ -102,10 +102,13 @@ jobs:
     #     if-no-files-found: warn
     #     overwrite: false
 
-    - name: Pack Release
-      run: |
-        zip -r build/cfms-cli-${{ github.ref }}-windows.zip build/windows
-        sha1sum build/cfms-cli-${{ github.ref }}-windows.zip > build/cfms-cli-${{ github.ref }}-windows.zip.sha1
+    - name: Archive Release
+      uses: thedoctor0/zip-release@0.7.5
+      with:
+        type: 'zip'
+        filename: 'cfms-cli-${{ github.ref }}-windows.zip'
+        directory: 'build/windows'
+        exclusions: '*.git* /*node_modules/* .editorconfig'
 
     - name: Release
       uses: softprops/action-gh-release@v2
@@ -113,7 +116,6 @@ jobs:
       with:
         files: |
           build/windows/cfms-cli-${{ github.ref }}-windows.zip
-          build/cfms-cli-${{ github.ref }}-windows.zip.sha1
         # overwrite_files: true
         generate_release_notes: true
 
