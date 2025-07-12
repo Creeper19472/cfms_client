@@ -291,7 +291,7 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
         response = build_request(
             inner_event.page,
             action="delete_directory",
-            data={"folder_id": e.control.content.data},
+            data={"folder_id": e.control.content.data[0]},
             username=inner_event.page.session.get("username"),
             token=inner_event.page.session.get("token"),
         )
@@ -321,7 +321,7 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
                 inner_event.page,
                 action="rename_directory",
                 data={
-                    "folder_id": e.control.content.data,
+                    "folder_id": e.control.content.data[0],
                     "new_name": folder_name_field.value,
                 },
                 username=e.page.session.get("username"),
@@ -337,7 +337,7 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
             inner_event.page.close(new_dialog)
 
         folder_name_field = ft.TextField(
-            label="目录的新名称", on_submit=request_rename_directory
+            label="目录的新名称", value=e.control.content.data[1], on_submit=request_rename_directory, autofocus=True
         )
         submit_button = ft.TextButton("重命名", on_click=request_rename_directory)
         cancel_button = ft.TextButton(
@@ -387,7 +387,7 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
                 inner_event.page,
                 action="get_directory_info",
                 data={
-                    "directory_id": e.control.content.data,
+                    "directory_id": e.control.content.data[0],
                 },
                 username=e.page.session.get("username"),
                 token=e.page.session.get("token"),
@@ -536,7 +536,7 @@ def on_document_right_click_menu(e: ft.ControlEvent):
             inner_event.page.close(new_dialog)
 
         document_title_field = ft.TextField(
-            label="文件的新名称", on_submit=request_rename_document
+            label="文件的新名称", value=e.control.content.data[1], on_submit=request_rename_document, autofocus=True, select
         )
         submit_button = ft.TextButton("重命名", on_click=request_rename_document)
         cancel_button = ft.TextButton(
@@ -719,8 +719,8 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                     subtitle=ft.Text(
                         f"Created time: {datetime.fromtimestamp(folder['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"
                     ),
-                    data=folder["id"],
-                    on_click=lambda e: load_directory(e.page, e.control.data),
+                    data=(folder["id"], folder["name"]),
+                    on_click=lambda e: load_directory(e.page, e.control.data[0]),
                 ),
                 on_secondary_tap=on_folder_right_click_menu,
                 on_long_press_start=on_folder_right_click_menu,
