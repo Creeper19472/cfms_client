@@ -59,3 +59,4 @@ flet = {extras = ["all"], version = "0.28.3"}
 "android.permission.WRITE_EXTERNAL_STORAGE" = true
 "android.permission.MANAGE_EXTERNAL_STORAGE" = true
 "android.permission.MANAGE_MEDIA" = true
+"android.permission.REQUEST_INSTALL_PACKAGES" = true

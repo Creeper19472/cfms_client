@@ -5,6 +5,8 @@ from include.request import build_request
 from common.notifications import send_error
 import requests, os, time
 import threading
+from flet_permission_handler import PermissionHandler, PermissionType, PermissionStatus
+
 
 GITHUB_REPO = "Creeper19472/cfms_client"
 SUPPORTED_PLATFORM = {"windows": "windows", "android": ".apk"}
@@ -266,7 +268,7 @@ class AboutModel(Model):
             e.page.close(upgrade_dialog)
 
         upgrade_special_button = FletOpenFile(
-            value=None, text="执行更新", visible=False
+            value=None, text="执行更新", visible=True # False
         )
         upgrade_special_note = ft.Text(
             "您使用的设备需要手动执行更新。再次点击“执行更新”以继续。",
@@ -291,7 +293,7 @@ class AboutModel(Model):
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
             actions=[
-                upgrade_special_button,
+                # upgrade_special_button,
                 ft.TextButton("取消", on_click=_stop_upgrade),
             ],
             scrollable=True,
@@ -343,9 +345,24 @@ class AboutModel(Model):
                         upgrade_special_button.value = (
                             f"{FLET_APP_STORAGE_TEMP}/{self.save_filename}"
                         )
-                        upgrade_special_button.visible = True
+                        # print(upgrade_special_button.value)
+
+                        self.ph = self.page.session.get("ph")
+                        assert type(self.ph) == PermissionHandler
+                        if (
+                            self.ph.request_permission(PermissionType.REQUEST_INSTALL_PACKAGES)
+                            == PermissionStatus.DENIED
+                        ):
+                            send_error(
+                                self.page,
+                                "授权失败，您将无法正常安装更新。请在设置中允许应用安装更新。",
+                            )
+
+                        # upgrade_special_button.visible = True
                         upgrade_special_note.visible = True
+                        upgrade_dialog.actions.insert(0, upgrade_special_button)
                         self.page.update()
+                        # upgrade_special_button.update()
 
             def stop(self):
                 self._stop_event.set()

@@ -176,5 +176,6 @@ class ConnectToServerModel(Model):
 
         self.ph = PermissionHandler()
         page.overlay.append(self.ph)
+        page.session.set("ph", self.ph)
 
         self.controls = [container, version_container]

@@ -536,7 +536,7 @@ def on_document_right_click_menu(e: ft.ControlEvent):
             inner_event.page.close(new_dialog)
 
         document_title_field = ft.TextField(
-            label="文件的新名称", value=e.control.content.data[1], on_submit=request_rename_document, autofocus=True, select
+            label="文件的新名称", value=e.control.content.data[1], on_submit=request_rename_document, autofocus=True
         )
         submit_button = ft.TextButton("重命名", on_click=request_rename_document)
         cancel_button = ft.TextButton(
