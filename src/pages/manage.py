@@ -754,7 +754,7 @@ def on_group_right_click_menu(e: ft.ControlEvent):
         inner_event.page.open(new_dialog)
 
     def set_group_permissions(inner_event: ft.ControlEvent):
-        return
+        # return
         dialog.open = False
         e.page.update()
 
@@ -763,7 +763,7 @@ def on_group_right_click_menu(e: ft.ControlEvent):
 
         this_loading_animation = ft.ProgressRing(visible=False)
 
-        def _refresh_group_list(secondary_inner_event: ft.ControlEvent):
+        def _refresh_permission_list(secondary_inner_event: ft.ControlEvent):
 
             dialog_permission_listview.disabled = True
             refresh_button.disabled = True
@@ -772,49 +772,30 @@ def on_group_right_click_menu(e: ft.ControlEvent):
             # 重置列表
             dialog_permission_listview.controls = []
 
-            # 拉取用户组列表
-            group_list_response = build_request(
+            # 拉取用户组信息
+            group_info_response = build_request(
                 inner_event.page,
-                action="list_groups",
-                data={},
+                action="get_group_info",
+                data={"group_name": e.control.data},
                 username=e.page.session.get("username"),
                 token=e.page.session.get("token"),
             )
-            if (code := group_list_response["code"]) != 200:
+            if (code := group_info_response["code"]) != 200:
                 send_error(
                     inner_event.page,
-                    f"拉取用户组列表失败: ({code}) {group_list_response['message']}",
+                    f"拉取用户组信息失败: ({code}) {group_info_response['message']}",
                 )
                 return
 
-            all_group_list = [
-                group["name"] for group in group_list_response["data"]["groups"]
-            ]
+            all_permission_list = group_info_response["data"]["permissions"]
 
-            user_data_response = build_request(
-                inner_event.page,
-                action="get_user_info",
-                data={
-                    "username": e.control.data,
-                },
-                username=e.page.session.get("username"),
-                token=e.page.session.get("token"),
-            )
-            if (code := user_data_response["code"]) != 200:
-                send_error(
-                    inner_event.page,
-                    f"拉取用户信息失败: ({code}) {user_data_response['message']}",
-                )
-                return
-            user_membership_list = user_data_response["data"]["groups"]
-
-            for each_group in all_group_list:
+            for each_permission in all_permission_list:
                 dialog_permission_listview.controls.append(
                     ft.Checkbox(
-                        label=each_group,  # 后面可能改成显示名称
-                        data=each_group,
+                        label=each_permission,  # 后面可能改成显示名称
+                        data=each_permission,
                         on_change=None,  # 提交前什么都不处理
-                        value=each_group in user_membership_list,
+                        value=each_permission in all_permission_list,
                     )
                 )
 
@@ -837,10 +818,10 @@ def on_group_right_click_menu(e: ft.ControlEvent):
 
             response = build_request(
                 inner_event.page,
-                action="change_user_groups",
+                action="change_group_permissions",
                 data={
-                    "username": e.control.data,
-                    "groups": to_submit_list,
+                    "group_name": e.control.data,
+                    "permissions": to_submit_list,
                 },
                 username=e.page.session.get("username"),
                 token=e.page.session.get("token"),
@@ -848,7 +829,7 @@ def on_group_right_click_menu(e: ft.ControlEvent):
             if (code := response["code"]) != 200:
                 send_error(
                     inner_event.page,
-                    f"更改用户组失败: ({code}) {response['message']}",
+                    f"更改用户组权限失败: ({code}) {response['message']}",
                 )
             else:
                 refresh_user_list(inner_event.page)
@@ -861,13 +842,13 @@ def on_group_right_click_menu(e: ft.ControlEvent):
         )
         refresh_button = ft.IconButton(
             ft.Icons.REFRESH,
-            on_click=_refresh_group_list,
+            on_click=_refresh_permission_list,
         )
 
         change_dialog = ft.AlertDialog(
             title=ft.Row(
                 controls=[
-                    ft.Text("更改用户组"),
+                    ft.Text("更改用户组权限"),
                     refresh_button,
                 ]
             ),
@@ -887,7 +868,7 @@ def on_group_right_click_menu(e: ft.ControlEvent):
         )
 
         inner_event.page.open(change_dialog)
-        _refresh_group_list(inner_event)
+        _refresh_permission_list(inner_event)
 
     menu_listview = ft.ListView(
         controls=[

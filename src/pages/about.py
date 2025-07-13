@@ -327,10 +327,20 @@ class AboutModel(Model):
                         ) as zip_ref:
                             zip_ref.extractall(f"{FLET_APP_STORAGE_TEMP}/update")
 
+                        upgrade_note.value = "正在删除已解压缩的包"
+                        self.page.update()
+
+                        try:
+                            os.remove(f"{FLET_APP_STORAGE_TEMP}/{self.save_filename}")
+                        except FileNotFoundError:
+                            pass
+                        except Exception as e:
+                            send_error(self.page, f"删除临时文件失败：{e}")
+
                         upgrade_note.value = "正在写入更新脚本"
                         self.page.update()
 
-                        _update_script = f'taskkill -f -im cfms_client.exe & xcopy "{FLET_APP_STORAGE_TEMP}/update/build/windows" "{RUNTIME_PATH}" /I /Y /S'
+                        _update_script = f'taskkill -f -im cfms_client.exe & xcopy "{FLET_APP_STORAGE_TEMP}/update/build/windows" "{RUNTIME_PATH}" /I /Y /S & rmdir /s /q "{FLET_APP_STORAGE_TEMP}/update"'
                         with open(f"{FLET_APP_STORAGE_TEMP}/update.cmd", "w") as f:
                             f.write(_update_script)
 

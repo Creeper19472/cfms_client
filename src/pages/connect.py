@@ -49,7 +49,7 @@ class ConnectToServerModel(Model):
         self.input_text_field.disabled = True
         self.page.update()
 
-        server_address = self.server_address_ref.current.value
+        server_address = "wss://" + self.server_address_ref.current.value
         # print(server_address)
         # Regular expression to match "wss://<valid server address>"
         wss_pattern_v4 = r"^wss:\/\/[a-zA-Z0-9.-]+(:[0-9]+)?$"
@@ -126,7 +126,10 @@ class ConnectToServerModel(Model):
         self.input_text_field = ft.TextField(
             ref=self.server_address_ref,
             label="服务器地址",
-            hint_text="e.g. wss://localhost:5104",
+            # prefix_icon=ft.Icons.MONITOR_OUTLINED,
+            # prefix_icon_size_constraints=,
+            prefix_text="wss://",
+            hint_text="e.g. localhost:5104",
             border_color=BORDER_COLOR,
             cursor_color=PRIMARY_COLOR,
             focused_border_color=PRIMARY_COLOR,
@@ -134,7 +137,7 @@ class ConnectToServerModel(Model):
             color=TEXT_COLOR,
             hint_style=ft.TextStyle(color=PLACEHOLDER_COLOR),
             border_radius=8,
-            value="wss://localhost:5104",  # default
+            value="localhost:5104",  # default
             autofocus=True,
             on_submit=self.connect_button_clicked,  # Listen for the enter key event
         )
