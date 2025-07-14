@@ -59,26 +59,6 @@ def open_change_passwd_dialog(e: ft.ControlEvent):
     cancel_button = ft.TextButton("取消", on_click=lambda e: e.page.close(dialog))
 
     dialog = ft.AlertDialog(
-        title=ft.Text("创建文件夹"),
-        # title_padding=ft.padding.all(25),
-        content=ft.Column(
-            controls=[
-                new_passwd_field,
-            ],
-            # spacing=15,
-            width=400,
-            alignment=ft.MainAxisAlignment.CENTER,
-        ),
-        actions=[
-            submit_button,
-            this_loading_animation,
-            cancel_button,
-        ],
-        scrollable=True,
-        # alignment=ft.MainAxisAlignment.CENTER,
-    )
-
-    dialog = ft.AlertDialog(
         title=ft.Text("修改密码"),
         content=ft.Column(
             controls=[
@@ -88,13 +68,15 @@ def open_change_passwd_dialog(e: ft.ControlEvent):
             # spacing=15,
             width=400,
             alignment=ft.MainAxisAlignment.CENTER,
+            expand=True,
+            scroll=ft.ScrollMode.AUTO,
         ),
         actions=[
             submit_button,
             this_loading_animation,
             cancel_button,
         ],
-        scrollable=True,
+        # scrollable=True,
     )
     e.page.open(dialog)
 

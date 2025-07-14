@@ -291,12 +291,14 @@ class AboutModel(Model):
                 # spacing=15,
                 width=400,
                 alignment=ft.MainAxisAlignment.CENTER,
+                scroll=ft.ScrollMode.AUTO,
+                expand=True
             ),
             actions=[
                 # upgrade_special_button,
                 ft.TextButton("取消", on_click=_stop_upgrade),
             ],
-            scrollable=True,
+            # scrollable=True,
         )
         self.page.open(upgrade_dialog)
 

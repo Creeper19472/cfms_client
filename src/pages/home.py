@@ -118,13 +118,15 @@ def open_create_directory_form(page: ft.Page):
             # spacing=15,
             width=400,
             alignment=ft.alignment.center,
+            scroll=ft.ScrollMode.AUTO,
+            expand=True
         ),
         actions=[
             submit_button,
             this_loading_animation,
             cancel_button,
         ],
-        scrollable=True,
+        # scrollable=True,
         # alignment=ft.MainAxisAlignment.CENTER,
     )
 
@@ -354,13 +356,15 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
                 # spacing=15,
                 width=400,
                 alignment=ft.alignment.center,
+                scroll=ft.ScrollMode.AUTO,
+                expand=True
             ),
             actions=[
                 submit_button,
                 this_loading_animation,
                 cancel_button,
             ],
-            scrollable=True,
+            # scrollable=True,
             # alignment=ft.MainAxisAlignment.CENTER,
         )
 
@@ -432,11 +436,13 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
                 # spacing=15,
                 width=400,
                 alignment=ft.MainAxisAlignment.CENTER,
+                expand=True,
+                scroll=ft.ScrollMode.AUTO,
             ),
             actions=[
                 cancel_button,
             ],
-            scrollable=True,
+            # scrollable=True,
             # alignment=ft.MainAxisAlignment.CENTER,
         )
 
@@ -475,8 +481,8 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
     dialog = ft.AlertDialog(
         title=ft.Text("操作"),
         # title_padding=ft.padding.all(25),
-        content=ft.Column([menu_listview], width=400),
-        scrollable=True,
+        content=ft.Column([menu_listview], width=400, expand=True, scroll=ft.ScrollMode.AUTO),
+        # scrollable=True,
         alignment=ft.alignment.center,
     )
 
@@ -553,13 +559,15 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                 # spacing=15,
                 width=400,
                 alignment=ft.alignment.center,
+                expand=True,
+                scroll=ft.ScrollMode.AUTO,
             ),
             actions=[
                 submit_button,
                 this_loading_animation,
                 cancel_button,
             ],
-            scrollable=True,
+            # scrollable=True,
             # alignment=ft.MainAxisAlignment.CENTER,
         )
 
@@ -634,11 +642,13 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                 # spacing=15,
                 width=400,
                 alignment=ft.MainAxisAlignment.CENTER,
+                scroll=ft.ScrollMode.AUTO,
+                expand=True,
             ),
             actions=[
                 cancel_button,
             ],
-            scrollable=True,
+            # scrollable=True,
             # alignment=ft.MainAxisAlignment.CENTER,
         )
 
@@ -685,8 +695,8 @@ def on_document_right_click_menu(e: ft.ControlEvent):
 
     dialog = ft.AlertDialog(
         title=ft.Text("操作"),
-        content=ft.Column([menu_listview], width=400),
-        scrollable=True,
+        content=ft.Column([menu_listview], width=400, expand=True, scroll=ft.ScrollMode.AUTO),
+        # scrollable=True,
         alignment=ft.alignment.center,
     )
 

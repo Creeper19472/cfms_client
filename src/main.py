@@ -15,9 +15,11 @@ from flet_permission_handler.permission_handler import (
     PermissionStatus,
     PermissionType,
 )
+
 # import os
 
 # print(os.environ)
+
 
 def main(page: ft.Page):
     # Page settings
@@ -39,7 +41,21 @@ def main(page: ft.Page):
             tile_mode=ft.GradientTileMode.MIRROR,
         )
     )
-    page.theme = ft.Theme(scrollbar_theme=ft.ScrollbarTheme(thickness=0.0))
+
+    page.fonts = {
+        "Source Han Serif SC Regular": "/fonts/SourceHanSerifSC/SourceHanSerifSC-Regular.otf",
+        # "Deng": "/fonts/Deng.ttf",
+        # "Deng Bold": "/fonts/Dengb.ttf",
+        # "Deng Light": "/fonts/Dengl.ttf"
+    }
+
+    page.theme = ft.Theme(
+        scrollbar_theme=ft.ScrollbarTheme(thickness=0.0),
+        # dialog_theme=ft.DialogTheme(title_text_style=ft.TextStyle(size=22, font_family="Deng Bold")),
+        # text_button_theme=ft.TextButtonTheme(text_style=ft.TextStyle(font_family="Deng")),
+        # elevated_button_theme=ft.ElevatedButtonTheme(text_style=ft.TextStyle(font_family="Deng")),
+        # font_family="Deng",
+    )
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.safe_area = True
@@ -50,8 +66,8 @@ def main(page: ft.Page):
     page.session.set("upload_lock", threading.Lock())
     page.session.set("communication_lock", threading.Lock())
 
-    page.session.set("version", f"0.0.16.20250714_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.0.16")
+    page.session.set("version", f"0.0.17.20250714_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.0.17")
 
     page.go("/connect")
 
