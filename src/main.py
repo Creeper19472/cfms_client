@@ -9,16 +9,14 @@ from pages.login import LoginModel
 from pages.manage import ManageModel
 from pages.about import AboutModel
 from pages.settings import SettingsModel
+from pages.interface.move import MoveDocumentModel
 import threading, sys, platform, os
 from flet_permission_handler.permission_handler import (
     PermissionHandler,
     PermissionStatus,
     PermissionType,
 )
-
-# import os
-
-# print(os.environ)
+from include.update import FLET_APP_STORAGE_TEMP
 
 
 def main(page: ft.Page):
@@ -54,7 +52,7 @@ def main(page: ft.Page):
         # dialog_theme=ft.DialogTheme(title_text_style=ft.TextStyle(size=22, font_family="Deng Bold")),
         # text_button_theme=ft.TextButtonTheme(text_style=ft.TextStyle(font_family="Deng")),
         # elevated_button_theme=ft.ElevatedButtonTheme(text_style=ft.TextStyle(font_family="Deng")),
-        # font_family="Deng",
+        font_family="Source Han Serif SC Regular",
     )
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -66,8 +64,23 @@ def main(page: ft.Page):
     page.session.set("upload_lock", threading.Lock())
     page.session.set("communication_lock", threading.Lock())
 
-    page.session.set("version", f"0.0.17.20250714_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.0.17")
+    page.session.set("version", f"0.0.18.20250714_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.0.18")
+
+    import glob
+
+    # 删除所有旧安装包
+    for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/*.zip"):
+        os.remove(file)
+
+    for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/.apk"):
+        os.remove(file)
+
+    for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/.sha1"):
+        os.remove(file)
+
+    for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/.checksum"):
+        os.remove(file)
 
     page.go("/connect")
 

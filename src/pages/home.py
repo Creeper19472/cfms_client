@@ -119,7 +119,7 @@ def open_create_directory_form(page: ft.Page):
             width=400,
             alignment=ft.alignment.center,
             scroll=ft.ScrollMode.AUTO,
-            expand=True
+            expand=True,
         ),
         actions=[
             submit_button,
@@ -339,7 +339,10 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
             inner_event.page.close(new_dialog)
 
         folder_name_field = ft.TextField(
-            label="目录的新名称", value=e.control.content.data[1], on_submit=request_rename_directory, autofocus=True
+            label="目录的新名称",
+            value=e.control.content.data[1],
+            on_submit=request_rename_directory,
+            autofocus=True,
         )
         submit_button = ft.TextButton("重命名", on_click=request_rename_directory)
         cancel_button = ft.TextButton(
@@ -357,7 +360,7 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
                 width=400,
                 alignment=ft.alignment.center,
                 scroll=ft.ScrollMode.AUTO,
-                expand=True
+                expand=True,
             ),
             actions=[
                 submit_button,
@@ -481,7 +484,9 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
     dialog = ft.AlertDialog(
         title=ft.Text("操作"),
         # title_padding=ft.padding.all(25),
-        content=ft.Column([menu_listview], width=400, expand=True, scroll=ft.ScrollMode.AUTO),
+        content=ft.Column(
+            [menu_listview], width=400, expand=True, scroll=ft.ScrollMode.AUTO
+        ),
         # scrollable=True,
         alignment=ft.alignment.center,
     )
@@ -542,7 +547,10 @@ def on_document_right_click_menu(e: ft.ControlEvent):
             inner_event.page.close(new_dialog)
 
         document_title_field = ft.TextField(
-            label="文件的新名称", value=e.control.content.data[1], on_submit=request_rename_document, autofocus=True
+            label="文件的新名称",
+            value=e.control.content.data[1],
+            on_submit=request_rename_document,
+            autofocus=True,
         )
         submit_button = ft.TextButton("重命名", on_click=request_rename_document)
         cancel_button = ft.TextButton(
@@ -655,6 +663,14 @@ def on_document_right_click_menu(e: ft.ControlEvent):
         inner_event.page.open(info_dialog)
         request_document_info(inner_event)
 
+    def move_document(inner_event: ft.ControlEvent):
+        pass
+        # e.page.go("/settings")
+        # # 初始化要传递的数据
+        # e.page.session.set("move_document_id", e.control.content.data[0])
+        # e.page.session.set("current_directory_id", current_directory_id) # 用于判断是否为无意义移动
+        # e.page.close(dialog)
+
     def set_document_access_rules(inner_event: ft.ControlEvent):
         pass
 
@@ -667,6 +683,12 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                         title=ft.Text("删除"),
                         subtitle=ft.Text(f"删除此文件"),
                         on_click=delete_document,
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.DRIVE_FILE_MOVE_OUTLINED),
+                        title=ft.Text("移动"),
+                        subtitle=ft.Text(f"将文件移动到其他位置"),
+                        on_click=move_document,
                     ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.DRIVE_FILE_RENAME_OUTLINE_OUTLINED),
@@ -695,7 +717,9 @@ def on_document_right_click_menu(e: ft.ControlEvent):
 
     dialog = ft.AlertDialog(
         title=ft.Text("操作"),
-        content=ft.Column([menu_listview], width=400, expand=True, scroll=ft.ScrollMode.AUTO),
+        content=ft.Column(
+            [menu_listview], width=400, expand=True, scroll=ft.ScrollMode.AUTO
+        ),
         # scrollable=True,
         alignment=ft.alignment.center,
     )
@@ -850,8 +874,11 @@ settings_container = ft.Container(
                 controls=[
                     settings_avatar,
                     ft.Column(
-                        controls=[settings_username_display, ft.Text("星垂平野阔，月涌大江流。")],
-                        spacing=0
+                        controls=[
+                            settings_username_display,
+                            ft.Text("星垂平野阔，月涌大江流。"),
+                        ],
+                        spacing=0,
                     ),
                 ]
             ),
@@ -908,4 +935,4 @@ class HomeModel(Model):
         super().__init__(page)
         self.page.session.set("navigation_bar", self.navigation_bar)
 
-    controls = [home_container, files_container, settings_container]
+    controls = [ft.SafeArea(ft.Container()), home_container, files_container, settings_container]

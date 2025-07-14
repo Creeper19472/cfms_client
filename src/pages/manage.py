@@ -201,7 +201,7 @@ def on_user_right_click_menu(e: ft.ControlEvent):
                 width=400,
                 alignment=ft.MainAxisAlignment.CENTER,
                 scroll=ft.ScrollMode.AUTO,
-                expand=True
+                expand=True,
             ),
             actions=[
                 cancel_button,
@@ -385,7 +385,9 @@ def on_user_right_click_menu(e: ft.ControlEvent):
 
     dialog = ft.AlertDialog(
         title=ft.Text("操作"),
-        content=ft.Column([menu_listview], width=400, scroll=ft.ScrollMode.AUTO, expand=True),
+        content=ft.Column(
+            [menu_listview], width=400, scroll=ft.ScrollMode.AUTO, expand=True
+        ),
         # scrollable=True,
         alignment=ft.alignment.center,
     )
@@ -861,15 +863,19 @@ def on_group_right_click_menu(e: ft.ControlEvent):
             if not add_textfield.value:
                 return
 
-            dialog_permission_listview.controls.append(
-                ft.Checkbox(
-                    label=add_textfield.value,
-                    data=add_textfield.value,
-                    on_change=None,  # 提交前什么都不处理
-                    value=True, # 默认选中
-                    # autofocus=True,
+            if add_textfield.value not in [
+                control.data for control in dialog_permission_listview.controls
+            ]:
+                dialog_permission_listview.controls.append(
+                    ft.Checkbox(
+                        label=add_textfield.value,
+                        data=add_textfield.value,
+                        on_change=None,  # 提交前什么都不处理
+                        value=True,  # 默认选中
+                        # autofocus=True,
+                    )
                 )
-            )
+
             add_textfield.value = None
             secondary_inner_event.page.update()
             _update_add_button(secondary_inner_event)
@@ -882,21 +888,22 @@ def on_group_right_click_menu(e: ft.ControlEvent):
             label="新增权限",
             on_submit=_add_permission,
             expand=True,
-            on_change=_update_add_button
+            on_change=_update_add_button,
         )
         add_button = ft.IconButton(
-            ft.Icons.ADD,
-            on_click=_add_permission,
-            disabled=True
+            ft.Icons.ADD, on_click=_add_permission, disabled=True
         )
 
         change_dialog = ft.AlertDialog(
-            title=ft.Row(
+            title=ft.Column(
                 controls=[
-                    ft.Text("更改用户组权限"),
-                    refresh_button,
-                    add_button,
-                    add_textfield
+                    ft.Row(
+                        controls=[
+                            ft.Text("更改用户组权限"),
+                            refresh_button,
+                        ]
+                    ),
+                    ft.Row(controls=[add_button, add_textfield]),
                 ]
             ),
             # title_padding=ft.padding.all(25),
@@ -907,7 +914,7 @@ def on_group_right_click_menu(e: ft.ControlEvent):
                 alignment=ft.MainAxisAlignment.CENTER,
                 expand=True,
                 scroll=ft.ScrollMode.AUTO,
-                auto_scroll=True
+                auto_scroll=True,
             ),
             actions=[
                 submit_button,
@@ -949,7 +956,9 @@ def on_group_right_click_menu(e: ft.ControlEvent):
 
     dialog = ft.AlertDialog(
         title=ft.Text("操作"),
-        content=ft.Column([menu_listview], width=400, scroll=ft.ScrollMode.AUTO, expand=True),
+        content=ft.Column(
+            [menu_listview], width=400, scroll=ft.ScrollMode.AUTO, expand=True
+        ),
         # scrollable=True,
         alignment=ft.alignment.center,
     )

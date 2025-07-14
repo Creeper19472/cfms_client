@@ -2,65 +2,22 @@ import flet as ft
 from flet_open_file import FletOpenFile
 from flet_model import Model, route
 from include.request import build_request
+from include.update import (
+    SUPPORTED_PLATFORM,
+    RUNTIME_PATH,
+    FLET_APP_STORAGE_TEMP,
+    get_latest_release,
+    is_new_version
+)
 from common.notifications import send_error
 import requests, os, time
 import threading
 from flet_permission_handler import PermissionHandler, PermissionType, PermissionStatus
 
 
-GITHUB_REPO = "Creeper19472/cfms_client"
-SUPPORTED_PLATFORM = {"windows": "windows", "android": ".apk"}
-
-RUNTIME_PATH = os.environ.get("PYTHONHOME")
-FLET_APP_STORAGE_TEMP = os.environ.get("FLET_APP_STORAGE_TEMP", "")
-
-
-class GithubAsset:
-    def __init__(self, name: str = "", download_link: str = ""):
-        self.name = name
-        self.download_link = download_link
-
-
-class GithubRelease:
-    def __init__(
-        self,
-        version: str = "",
-        info: str = "",
-        release_link: str = "",
-        assets: list[GithubAsset] = [],
-    ):
-        self.version = version  # <- tag_name
-        self.info = info  # <- body
-        self.release_link = release_link  # <- html_url
-        self.assets = assets  # <- assets
-
-
-def get_latest_release() -> GithubRelease | None:
-    # check for updates
-    try:
-        resp = requests.get(
-            f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-        )
-        if resp.status_code != 200:
-            return
-    except requests.exceptions.ConnectionError:
-        raise  # leave it to the parent to handle
-
-    assets = []
-    for asset in resp.json()["assets"]:
-        assets.append(
-            GithubAsset(
-                name=asset["name"],
-                download_link=asset["browser_download_url"],
-            )
-        )
-
-    return GithubRelease(
-        version=resp.json()["tag_name"],
-        info=resp.json()["body"],
-        release_link=resp.json()["html_url"],
-        assets=assets,
-    )
+SUPPORTED_PLATFORM: dict
+RUNTIME_PATH: str
+FLET_APP_STORAGE_TEMP: str
 
 
 @route("about")
@@ -94,17 +51,18 @@ class AboutModel(Model):
                     ft.Text(
                         f"Version: {page.session.get("version")}",
                         size=16,
-                        text_align=ft.TextAlign.CENTER,
+                        text_align=ft.TextAlign.LEFT,
                     ),
                     ft.Text(
-                        "Copyright © 2025", size=16, text_align=ft.TextAlign.CENTER
+                        "Copyright © 2025 Creeper Team", size=16, text_align=ft.TextAlign.LEFT
                     ),
                     ft.Text(
                         "Licensed under Apache License Version 2.0.",
                         size=16,
-                        text_align=ft.TextAlign.CENTER,
+                        text_align=ft.TextAlign.LEFT,
                     ),
                 ],
+                expand=True
             ),
             margin=10,
             padding=10,
@@ -129,7 +87,7 @@ class AboutModel(Model):
             visible=False,
         )
         self.suc_release_info = ft.Column(
-            controls=[], visible=False, scroll=ft.ScrollMode.AUTO
+            controls=[], visible=False, scroll=ft.ScrollMode.AUTO, expand=True
         )
 
         self.software_updater_container = ft.Container(
@@ -220,7 +178,7 @@ class AboutModel(Model):
             build_version = self.page.session.get("build_version")
             assert build_version
 
-            if not self.is_new_version(False, 0, build_version, latest.version):
+            if not is_new_version(False, 0, build_version, latest.version):
                 self.suc_unavailable_text.value = "已是最新版本"
                 self.suc_unavailable_text.visible = True
                 return
@@ -268,11 +226,10 @@ class AboutModel(Model):
             e.page.close(upgrade_dialog)
 
         upgrade_special_button = FletOpenFile(
-            value=None, text="执行更新", visible=True # False
+            value=None, text="执行更新", visible=True  # False
         )
         upgrade_special_note = ft.Text(
-            "您使用的设备需要手动执行更新。再次点击“执行更新”以继续。",
-            visible=False
+            "您使用的设备需要手动执行更新。再次点击“执行更新”以继续。", visible=False
         )
         upgrade_note = ft.Text(visible=False)
         upgrade_progress = ft.ProgressRing(visible=False)
@@ -292,7 +249,7 @@ class AboutModel(Model):
                 width=400,
                 alignment=ft.MainAxisAlignment.CENTER,
                 scroll=ft.ScrollMode.AUTO,
-                expand=True
+                expand=True,
             ),
             actions=[
                 # upgrade_special_button,
@@ -350,7 +307,9 @@ class AboutModel(Model):
                         self.page.update()
 
                         # os.system(f'start "{FLET_APP_STORAGE_TEMP}/update.cmd"')
-                        subprocess.run(["cmd", "/c", f"{FLET_APP_STORAGE_TEMP}/update.cmd"])
+                        subprocess.run(
+                            ["cmd", "/c", f"{FLET_APP_STORAGE_TEMP}/update.cmd"]
+                        )
                         self.page.window.close()
 
                     else:
@@ -362,7 +321,9 @@ class AboutModel(Model):
                         self.ph = self.page.session.get("ph")
                         assert type(self.ph) == PermissionHandler
                         if (
-                            self.ph.request_permission(PermissionType.REQUEST_INSTALL_PACKAGES)
+                            self.ph.request_permission(
+                                PermissionType.REQUEST_INSTALL_PACKAGES
+                            )
                             == PermissionStatus.DENIED
                         ):
                             send_error(
@@ -425,33 +386,6 @@ class AboutModel(Model):
 
         self.suc_upgrade_button.disabled = False
         self.page.update()
-
-    def is_new_version(
-        self,
-        is_preview: bool,
-        commit_count: int,
-        version_name: str,
-        version_tag: str,
-    ) -> bool:
-        # 移除前缀，如 "r" 或 "v"
-        new_version = version_tag[1:]
-        if is_preview:
-            # 预览版本：基于 "mihonapp/mihon-preview" 仓库的发布
-            # 标记为类似 "r1234"
-            return new_version.isdigit() and int(new_version) > commit_count
-        else:
-            # 发布版本：基于 "mihonapp/mihon" 仓库的发布
-            # 标记为类似 "v0.1.2"
-            old_version = version_name[1:]
-
-            new_sem_ver = [int(part) for part in new_version.split(".")]
-            old_sem_ver = [int(part) for part in old_version.split(".")]
-
-            for index, (new_part, old_part) in enumerate(zip(new_sem_ver, old_sem_ver)):
-                if new_part > old_part:
-                    return True
-
-            return False
 
     def post_init(self) -> None:
         self.check_for_updates()
