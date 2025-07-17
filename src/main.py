@@ -9,7 +9,8 @@ from pages.login import LoginModel
 from pages.manage import ManageModel
 from pages.about import AboutModel
 from pages.settings import SettingsModel
-from pages.interface.move import MoveDocumentModel
+from pages.tasks import TasksModel
+from pages.interface.move import MoveObjectModel
 import threading, sys, platform, os
 from flet_permission_handler.permission_handler import (
     PermissionHandler,
@@ -17,6 +18,9 @@ from flet_permission_handler.permission_handler import (
     PermissionType,
 )
 from include.update import FLET_APP_STORAGE_TEMP
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 def main(page: ft.Page):
@@ -30,6 +34,13 @@ def main(page: ft.Page):
     page.spacing = 0
     page.scroll = ft.ScrollMode.AUTO
     page.bgcolor = ft.Colors.TRANSPARENT
+
+    def on_keyboard(e: ft.KeyboardEvent):
+        if e.key == "S" and e.ctrl:
+            page.show_semantics_debugger = not page.show_semantics_debugger
+            page.update()
+
+    page.on_keyboard_event = on_keyboard
 
     page.decoration = ft.BoxDecoration(
         gradient=ft.LinearGradient(
