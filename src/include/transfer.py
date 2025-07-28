@@ -157,7 +157,7 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
 
     upload_lock: threading.Lock = page.session.get("upload_lock")
     if not upload_lock.acquire(timeout=0):
-        send_error(page, "不能同时上传多个文件")
+        send_error(page, "不能同时执行多个上传任务")
         return
 
     ssl_context = ssl.create_default_context()
