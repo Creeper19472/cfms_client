@@ -6,7 +6,7 @@ from common.notifications import send_error
 from include.request import build_request
 from include.transfer import receive_file_from_server, upload_file_to_server
 from datetime import datetime
-import threading, sys
+import threading, os
 
 """
 Why not add a logout button to the user interface...... Well, we tried.
@@ -35,17 +35,18 @@ current_directory_id = ""
 
 class MyNavBar(ft.NavigationBar):
     def __init__(self):
-        self.last_selected_index = 1  # 默认值设置成初次进入时默认选中的页面在效果上较好
+        self.last_selected_index = 2  # 默认值设置成初次进入时默认选中的页面在效果上较好
 
         nav_destinations = [
             ft.NavigationBarDestination(icon=ft.Icons.FOLDER, label="Files"),
+            ft.NavigationBarDestination(icon=ft.Icons.ARROW_CIRCLE_DOWN, label="Tasks"),
             ft.NavigationBarDestination(icon=ft.Icons.HOME, label="Home"),
             ft.NavigationBarDestination(icon=ft.Icons.MORE_HORIZ, label="More"),
         ]
 
         super().__init__(
             nav_destinations,
-            selected_index=1,
+            selected_index=2,
             on_change=self.on_change_item,
             # visible=False
         )
@@ -60,11 +61,14 @@ class MyNavBar(ft.NavigationBar):
                 load_directory(self.page, folder_id=current_directory_id)
 
             case 1:
+                control.selected_index = control.last_selected_index
+                self.page.go("/home/tasks#object_type=document")
+            case 2:
                 files_container.visible = False
                 home_container.visible = True
                 settings_container.visible = False
                 self.page.update()
-            case 2:
+            case 3:
                 files_container.visible = False
                 home_container.visible = False
                 settings_container.visible = True
@@ -76,7 +80,7 @@ class MyNavBar(ft.NavigationBar):
                     _nickname if _nickname else self.page.session.get("username")
                 )
                 self.page.update()
-            case 3:
+            case 4:
                 control.selected_index = control.last_selected_index
                 _refresh_user_list_function: function = self.page.session.get(
                     "refresh_user_list"
@@ -227,7 +231,66 @@ def upload_file(page: ft.Page):
         if not e.files:
             return
 
+        progress_bar = ft.ProgressBar()
+        progress_info = ft.Text(
+            f"正在准备上传", text_align="center", color=ft.Colors.WHITE
+        )
+        progress_column = ft.Column(
+            controls=[progress_bar, progress_info],
+            # alignment=(
+            #     ft.MainAxisAlignment.START
+            #     if os.name == "nt"
+            #     else ft.MainAxisAlignment.END
+            # ),
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+
+        # 预定义取消按钮
+        _cancel_button = ft.TextButton()
+
+        # 设置终止标志
+        _stop_flag = False
+
+        def _cancel_upload(e: ft.ControlEvent):
+            _cancel_button.disabled = True
+            page.update()
+
+            nonlocal _stop_flag
+            _stop_flag = True
+
+        _cancel_button.on_click = _cancel_upload
+        _cancel_button.text = "取消"
+
+        if len(e.files) > 1:
+            upload_dialog = ft.AlertDialog(
+                modal=True,
+                title=ft.Text("批量上传"),
+                content=ft.Column(
+                    controls=[progress_column],
+                    # spacing=15,
+                    width=400,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    scroll=ft.ScrollMode.AUTO,
+                    expand=True,
+                ),
+                actions=[
+                    _cancel_button,
+                ],
+            )
+            page.open(upload_dialog)
+
         for each_file in e.files:
+
+            if _stop_flag:
+                break
+
+            if len(e.files) > 1:
+                current_number = e.files.index(each_file) + 1
+
+                progress_bar.value = current_number / len(e.files)
+                progress_info.value = f"正在上传文件 [{current_number}/{len(e.files)}]"
+                page.update()
+
             response = build_request(
                 page,
                 action="create_document",
@@ -264,11 +327,11 @@ def upload_file(page: ft.Page):
             # Create a new thread to handle the file uploading process
             thread = threading.Thread(target=handle_file_upload, args=(page, task_id))
             thread.start()
+            thread.join()  # Wait for the thread to finish
 
-        # selected_files.value = (
-        #     ", ".join(map(lambda f: f.name, e.files)) if e.files else "Cancelled!"
-        # )
-        # selected_files.update()
+        if len(e.files) > 1:
+            page.close(upload_dialog)
+            page.update()
 
     pick_files_dialog = ft.FilePicker(on_result=pick_files_result)
     # selected_files = ft.Text()
@@ -277,7 +340,7 @@ def upload_file(page: ft.Page):
     # page.overlay.append(selected_files)
     page.update()
 
-    pick_files_dialog.pick_files(allow_multiple=False)  # TODO
+    pick_files_dialog.pick_files(allow_multiple=True)
 
 
 def update_mouse_position(e: ft.HoverEvent):
@@ -664,15 +727,17 @@ def on_document_right_click_menu(e: ft.ControlEvent):
         request_document_info(inner_event)
 
     def move_document(inner_event: ft.ControlEvent):
-        pass
-        # e.page.go("/settings")
-        # # 初始化要传递的数据
+        # 初始化要传递的数据
+        # e.page.session.set("move_object_type", "document")
         # e.page.session.set("move_document_id", e.control.content.data[0])
         # e.page.session.set("current_directory_id", current_directory_id) # 用于判断是否为无意义移动
-        # e.page.close(dialog)
+        e.page.close(dialog)
+        e.page.go(
+            f"/home/move_object#object_type=document&object_id={e.control.content.data[0]}&current_directory_id={current_directory_id}"
+        )  # 我们是客户端，不用怀疑服务端，对吧？
 
     def set_document_access_rules(inner_event: ft.ControlEvent):
-        pass
+        e.page.close(dialog)
 
     menu_listview = ft.ListView(
         controls=[
@@ -684,12 +749,12 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                         subtitle=ft.Text(f"删除此文件"),
                         on_click=delete_document,
                     ),
-                    ft.ListTile(
-                        leading=ft.Icon(ft.Icons.DRIVE_FILE_MOVE_OUTLINED),
-                        title=ft.Text("移动"),
-                        subtitle=ft.Text(f"将文件移动到其他位置"),
-                        on_click=move_document,
-                    ),
+                    # ft.ListTile(
+                    #     leading=ft.Icon(ft.Icons.DRIVE_FILE_MOVE_OUTLINED),
+                    #     title=ft.Text("移动"),
+                    #     subtitle=ft.Text(f"将文件移动到其他位置"),
+                    #     on_click=move_document,
+                    # ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.DRIVE_FILE_RENAME_OUTLINE_OUTLINED),
                         title=ft.Text("重命名"),
@@ -725,7 +790,7 @@ def on_document_right_click_menu(e: ft.ControlEvent):
     )
 
     e.page.open(dialog)
-    e.page.update()
+    # e.page.update()
 
 
 def update_file_controls(folders: list[dict], documents: list[dict], parent_id=None):
@@ -758,7 +823,7 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                 ),
                 on_secondary_tap=on_folder_right_click_menu,
                 on_long_press_start=on_folder_right_click_menu,
-                on_hover=lambda e: update_mouse_position(e),
+                # on_hover=lambda e: update_mouse_position(e),
             )
             for folder in folders
         ]
@@ -774,7 +839,7 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                         + (
                             f"{document["size"] / 1024 / 1024:.3f} MB"
                             if document["size"]
-                            else None
+                            else ""
                         )
                     ),
                     is_three_line=True,
@@ -783,7 +848,7 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                 ),
                 on_secondary_tap=on_document_right_click_menu,
                 on_long_press_start=on_document_right_click_menu,
-                on_hover=lambda e: update_mouse_position(e),
+                # on_hover=lambda e: update_mouse_position(e),
             )
             for document in documents
         ]
@@ -935,4 +1000,15 @@ class HomeModel(Model):
         super().__init__(page)
         self.page.session.set("navigation_bar", self.navigation_bar)
 
-    controls = [ft.SafeArea(ft.Container()), home_container, files_container, settings_container]
+    # def init(self):
+    #     self.page.session.set("home", self)
+
+    controls = [
+        ft.SafeArea(ft.Container()),
+        home_container,
+        files_container,
+        settings_container,
+    ]
+
+    # def load_directory(self):
+    #     load_directory(self.page, current_directory_id)
