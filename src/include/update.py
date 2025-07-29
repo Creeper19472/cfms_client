@@ -1,12 +1,10 @@
 import requests
 import os
+from include.constants import RUNTIME_PATH, FLET_APP_STORAGE_TEMP
 
 
 GITHUB_REPO = "Creeper19472/cfms_client"
 SUPPORTED_PLATFORM = {"windows": "windows", "android": ".apk"}
-
-RUNTIME_PATH = os.environ.get("PYTHONHOME", "")
-FLET_APP_STORAGE_TEMP = os.environ.get("FLET_APP_STORAGE_TEMP", "")
 
 
 class GithubAsset:

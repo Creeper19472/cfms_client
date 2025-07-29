@@ -17,7 +17,10 @@ from flet_permission_handler.permission_handler import (
     PermissionStatus,
     PermissionType,
 )
-from include.update import FLET_APP_STORAGE_TEMP
+from include.constants import FLET_APP_STORAGE_TEMP
+
+import logging
+logging.basicConfig(level=logging.INFO)
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -77,8 +80,9 @@ def main(page: ft.Page):
 
     page.session.set("tasks", [])
 
-    page.session.set("version", f"0.0.19.20250728_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.0.19")
+    page.session.set("version", f"0.1.0.20250729_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.1.0")
+    page.session.set("protocol_version", 1)
 
     import glob
 
