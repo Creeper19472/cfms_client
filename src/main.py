@@ -22,6 +22,9 @@ from include.constants import FLET_APP_STORAGE_TEMP
 import logging
 logging.basicConfig(level=logging.INFO)
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
 
 def main(page: ft.Page):
     # Page settings
