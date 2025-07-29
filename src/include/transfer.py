@@ -3,6 +3,7 @@ import flet as ft
 import json
 import base64, time
 import os, sys
+import shutil
 
 # from Crypto.Cipher import AES
 from include.log import getCustomLogger
@@ -11,6 +12,8 @@ import mmap, hashlib, ssl
 from websockets.sync.client import connect
 import threading
 import traceback
+from include.constants import FLET_APP_STORAGE_TEMP
+from Crypto.Cipher import AES
 
 
 def calculate_sha256(file_path):
@@ -50,7 +53,9 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) 
     ssl_context.verify_mode = ssl.CERT_NONE
 
     try:
-        websocket = connect(page.session.get("server_uri"), ssl=ssl_context)
+        websocket = connect(
+            page.session.get("server_uri"), ssl=ssl_context, max_size=1024**2 * 4
+        )
     except Exception as e:
         download_lock.release()
         raise NotImplementedError
@@ -72,10 +77,15 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) 
         page.logger.error("Invalid action received for file transfer.")
         return
 
-    sha256 = response["data"].get("sha256")
-    file_size = response["data"].get("file_size")
+    sha256 = response["data"].get("sha256")  # 原始文件的 SHA256
+    file_size = response["data"].get("file_size")  # 原始文件的大小
+    chunk_size = response["data"].get("chunk_size", 8192)  # 分片大小
+    total_chunks = response["data"].get("total_chunks")  # 分片总数
 
     websocket.send("ready")
+
+    downloading_path = FLET_APP_STORAGE_TEMP + "/downloading/" + task_id
+    os.makedirs(downloading_path, exist_ok=True)
 
     if page.platform.value in ["android"]:
         file_path = f"/storage/emulated/0/{filename if filename else sha256[0:17]}"
@@ -84,7 +94,7 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) 
 
     try:
         progress_bar = ft.ProgressBar()
-        progress_info = ft.Text(text_align="center", color=ft.Colors.WHITE)
+        progress_info = ft.Text(text_align=ft.TextAlign.CENTER, color=ft.Colors.WHITE)
         progress_column = ft.Column(
             controls=[progress_bar, progress_info],
             alignment=(
@@ -100,46 +110,118 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) 
 
         try:
 
-            with open(file_path, "wb") as f:
-                while True:
-                    # Receive encrypted data from the server
-                    data = websocket.recv()
-                    f.write(data)
-                    progress_bar.value = f.tell() / file_size
+            received_chunks = 0
+            iv: bytes = b""
+
+            while received_chunks + 1 <= total_chunks:
+                # Receive encrypted data from the server
+                # data = websocket.recv()
+                # f.write(data)
+                # progress_bar.value = f.tell() / file_size
+                # progress_info.value = (
+                #     f"{f.tell() / 1024 / 1024:.2f} MB/{file_size / 1024 / 1024:.2f} MB"
+                # )
+                # page.update()
+
+                data = websocket.recv()
+                if not data:
+                    raise ValueError("Received empty data from server")
+                    # break
+
+                data_json: dict = json.loads(data)
+                # print(data_json)
+
+                index = data_json["data"].get("index")
+                if index == 0:
+                    iv = base64.b64decode(data_json["data"].get("iv"))
+                chunk_hash = data_json["data"].get("hash")  # provided but unused
+                chunk_data = base64.b64decode(data_json["data"].get("chunk"))
+                chunk_file_path = os.path.join(downloading_path, str(index))
+
+                with open(chunk_file_path, "wb") as chunk_file:
+                    chunk_file.write(chunk_data)
+
+                received_chunks += 1
+
+                if received_chunks < total_chunks:
+                    received_file_size = chunk_size * received_chunks
+                else:
+                    received_file_size = file_size
+
+                progress_bar.value = received_file_size / file_size
+                progress_info.value = f"{received_file_size / 1024 / 1024:.2f} MB/{file_size / 1024 / 1024:.2f} MB"
+                page.update()
+
+            # 获得解密信息
+            decrypted_data = websocket.recv()
+            decrypted_data_json: dict = json.loads(decrypted_data)
+
+            aes_key = base64.b64decode(decrypted_data_json["data"].get("key"))
+
+            # 解密分块
+            decrypted_chunks = 1
+            cipher = AES.new(aes_key, AES.MODE_CFB, iv=iv)  # 初始化 cipher
+
+            with open(file_path, "wb") as out_file:
+                while decrypted_chunks <= total_chunks:
+                    progress_bar.value = decrypted_chunks / total_chunks
                     progress_info.value = (
-                        f"{f.tell() / 1024 / 1024:.2f} MB/{file_size / 1024 / 1024:.2f} MB"
+                        f"正在解密分块 [{decrypted_chunks}/{total_chunks}]"
                     )
                     page.update()
 
-                    if not data or len(data) < 8192:
-                        break
+                    chunk_file_path = os.path.join(
+                        downloading_path, str(decrypted_chunks - 1)
+                    )
+
+                    with open(chunk_file_path, "rb") as chunk_file:
+                        encrypted_chunk = chunk_file.read()
+                        decrypted_chunk = cipher.decrypt(encrypted_chunk)
+                        out_file.write(decrypted_chunk)
+
+                    # os.remove(chunk_file_path)
+                    decrypted_chunks += 1
+
+            # 删除临时文件夹
+            progress_bar.value = None
+            progress_info.value = (
+                f"正在删除临时文件"
+            )
+            page.update()
+
+            shutil.rmtree(downloading_path)
 
         except Exception as e:
             send_error(page, f"Error receiving file: {e}")
-            raise    
+            raise
 
-        # # Write the decrypted file to disk
-        # file_path = f"received_{task_id}.bin"
-        # with open(file_path, "wb") as f:
-        #     f.write(decrypted_data)
+        # 校验文件
+        progress_bar.value = None
+        progress_info.value = f"正在校验文件"
+        page.update()
 
-        # Verify file size
-        actual_size = os.path.getsize(file_path)
-        if actual_size != file_size:
-            page.logger.error(
-                f"File size mismatch: expected {file_size}, got {actual_size}"
-            )
+        def _action_verify():
+
+            if file_size != os.path.getsize(file_path):
+                send_error(
+                    page,
+                    f"File size mismatch: expected {file_size}, got {os.path.getsize(file_path)}",
+                )
+                return
+
+            # 校验 SHA256
+            actual_sha256 = calculate_sha256(file_path)
+            if sha256 and actual_sha256 != sha256:
+                send_error(
+                    page,
+                    f"SHA256 mismatch: expected {sha256}, got {actual_sha256}",
+                )
+                return
+
+            return True
+
+        if not _action_verify():
             os.remove(file_path)
-            return
-
-        # Verify SHA256
-        actual_sha256 = calculate_sha256(file_path)
-        if sha256 and actual_sha256 != sha256:
-            page.logger.error(
-                f"SHA256 mismatch: expected {sha256}, got {actual_sha256}"
-            )
-            os.remove(file_path)
-            return
 
         page.overlay.remove(progress_column)
         page.update()
@@ -148,10 +230,11 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) 
         download_lock.release()
 
     except Exception as e:
-        send_error(page, traceback.format_exc(sys.exc_info()[2]))
+        send_error(page, traceback.format_exc())
         raise
 
     websocket.close()
+
 
 def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
 

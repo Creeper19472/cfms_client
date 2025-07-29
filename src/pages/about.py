@@ -2,13 +2,8 @@ import flet as ft
 from flet_open_file import FletOpenFile
 from flet_model import Model, route
 from include.request import build_request
-from include.update import (
-    SUPPORTED_PLATFORM,
-    RUNTIME_PATH,
-    FLET_APP_STORAGE_TEMP,
-    get_latest_release,
-    is_new_version
-)
+from include.update import SUPPORTED_PLATFORM, get_latest_release, is_new_version
+from include.constants import RUNTIME_PATH, FLET_APP_STORAGE_TEMP
 from common.notifications import send_error
 import requests, os, time
 import threading
@@ -54,7 +49,9 @@ class AboutModel(Model):
                         text_align=ft.TextAlign.LEFT,
                     ),
                     ft.Text(
-                        "Copyright © 2025 Creeper Team", size=16, text_align=ft.TextAlign.LEFT
+                        "Copyright © 2025 Creeper Team",
+                        size=16,
+                        text_align=ft.TextAlign.LEFT,
                     ),
                     ft.Text(
                         "Licensed under Apache License Version 2.0.",
@@ -62,7 +59,7 @@ class AboutModel(Model):
                         text_align=ft.TextAlign.LEFT,
                     ),
                 ],
-                expand=True
+                expand=True,
             ),
             margin=10,
             padding=10,
@@ -168,10 +165,11 @@ class AboutModel(Model):
                     size=16,
                     text_align=ft.TextAlign.LEFT,
                 ),
-                ft.Text(
+                ft.Markdown(
                     latest.info,
-                    size=16,
-                    text_align=ft.TextAlign.LEFT,
+                    selectable=True,
+                    extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+                    on_tap_link=lambda e: e.page.launch_url(e.data),
                 ),
             ]
 

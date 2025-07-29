@@ -10,6 +10,7 @@ from flet_permission_handler import (
     PermissionType,
 )
 from common.notifications import send_error
+from include.request import build_request
 
 # Enhanced Colors & Styles
 PRIMARY_COLOR = "#4f46e5"  # Deep indigo for primary actions
@@ -83,6 +84,21 @@ class ConnectToServerModel(Model):
                 self.page.open(self.error_bar)
                 return
 
+            server_info_response = build_request(self.page, "server_info")
+            if server_info_response["data"]["protocol_version"] > self.page.session.get(
+                "protocol_version"
+            ):
+                self.connect_button.visible = True
+                self.loading_animation.visible = False
+                self.input_text_field.disabled = False
+                self.error_bar.content.value: str = (
+                    "您正在连接到一个使用更高版本协议的服务器，请更新客户端。"
+                )
+                self.page.update()
+                self.page.open(self.error_bar)
+                return
+
+            self.page.session.set("server_info", server_info_response["data"])
             self.page.session.set("server_uri", server_address)
             self.page.title = f"CFMS Client - {server_address}"
 
@@ -100,7 +116,9 @@ class ConnectToServerModel(Model):
                         "授权失败，您将无法正常下载文件。请在设置中允许应用访问您的文件。",
                     )
 
-            if self.page.platform.value == "windows" and os.environ.get("FLET_APP_CONSOLE"):
+            if self.page.platform.value == "windows" and os.environ.get(
+                "FLET_APP_CONSOLE"
+            ):
                 os.startfile(os.getcwd())
 
             self.page.go("/login")

@@ -40,7 +40,8 @@ class LoginModel(Model):
         self.username_field = ft.TextField(
             label="Username", autofocus=True, on_submit=lambda e: self.password_field.focus()
         )
-        
+
+        self._server_info = {}
 
         self.error_bar = ft.SnackBar(
             content=ft.Text(),
@@ -56,6 +57,13 @@ class LoginModel(Model):
             color=TEXT_COLOR,
             on_click=self.request_login,
             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=BUTTON_RADIUS)),
+        )
+
+        self.welcome_text = ft.Text(
+            size=24,
+            text_align=ft.TextAlign.CENTER,
+            color=TEXT_COLOR,
+            weight=ft.FontWeight.BOLD,
         )
 
         # required_cred_dlg =
@@ -87,7 +95,12 @@ class LoginModel(Model):
             ),
         )
 
-        self.controls = [container]
+        self.controls = [self.welcome_text, container]
+
+    def post_init(self) -> None:
+        self._server_info: dict = self.page.session.get("server_info")
+        self.welcome_text.value = f"{self._server_info.get('server_name', 'CFMS Server')}"
+        self.page.update()
 
     def request_login(self, e):
 
