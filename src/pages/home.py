@@ -7,6 +7,8 @@ from include.request import build_request
 from include.transfer import receive_file_from_server, upload_file_to_server
 from datetime import datetime
 import threading, os
+from include.upload import upload_directory
+from include.upload import filepicker_ref
 
 """
 Why not add a logout button to the user interface...... Well, we tried.
@@ -172,6 +174,8 @@ def load_directory(page: ft.Page, folder_id=None):
     _fallback_directory_id = current_directory_id
     current_directory_id = folder_id
 
+    page.session.set("current_directory_id", current_directory_id)
+
     loading_animation.visible = True
     file_listview.visible = False
     page.update()
@@ -224,7 +228,7 @@ def open_document(page: ft.Page, document_id: str, filename: str):
 
 def upload_file(page: ft.Page):
 
-    page.session.set("load_directory", load_directory)
+    # fallback
     page.session.set("current_directory_id", current_directory_id)
 
     def pick_files_result(e: ft.FilePickerResultEvent | None):
@@ -258,6 +262,12 @@ def upload_file(page: ft.Page):
             nonlocal _stop_flag
             _stop_flag = True
 
+        _ok_button = ft.TextButton(
+            "确定",
+            visible=True,
+            on_click=lambda _: page.close(upload_dialog),
+        )
+
         _cancel_button.on_click = _cancel_upload
         _cancel_button.text = "取消"
 
@@ -274,6 +284,7 @@ def upload_file(page: ft.Page):
                     expand=True,
                 ),
                 actions=[
+                    # _ok_button,
                     _cancel_button,
                 ],
             )
@@ -320,9 +331,18 @@ def upload_file(page: ft.Page):
             task_id = response["data"]["task_data"]["task_id"]
 
             def handle_file_upload(page, task_id):
-                upload_file_to_server(
-                    page, response["data"]["task_data"]["task_id"], each_file.path
-                )
+                try:
+                    upload_file_to_server(
+                        page, response["data"]["task_data"]["task_id"], each_file.path
+                    )
+                except Exception as exc:
+                    _new_error_text = ft.Text(
+                        f'在上传 "{each_file.name}" 时遇到问题: {exc}',
+                        text_align=ft.TextAlign.CENTER,
+                        # color=ft.Colors.RED,
+                    )
+                    progress_column.controls.append(_new_error_text)
+                    page.update()
 
             # Create a new thread to handle the file uploading process
             thread = threading.Thread(target=handle_file_upload, args=(page, task_id))
@@ -330,17 +350,15 @@ def upload_file(page: ft.Page):
             thread.join()  # Wait for the thread to finish
 
         if len(e.files) > 1:
-            page.close(upload_dialog)
-            page.update()
+            if len(progress_column.controls) <= 2:
+                page.close(upload_dialog)
+            else:
+                upload_dialog.actions.insert(0, _ok_button)
+                _cancel_button.disabled = True
+                page.update()
 
-    pick_files_dialog = ft.FilePicker(on_result=pick_files_result)
-    # selected_files = ft.Text()
-
-    page.overlay.append(pick_files_dialog)
-    # page.overlay.append(selected_files)
-    page.update()
-
-    pick_files_dialog.pick_files(allow_multiple=True)
+    filepicker_ref.current.on_result = pick_files_result
+    filepicker_ref.current.pick_files(allow_multiple=True)
 
 
 def update_mouse_position(e: ft.HoverEvent):
@@ -353,6 +371,10 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
     # this_loading_animation = ft.ProgressRing(visible=False)
 
     def delete_directory(inner_event: ft.ControlEvent):
+        menu_listview.disabled = True
+        dialog.modal = True
+        dialog.update() # 时间可能会较长，因此先禁用
+
         response = build_request(
             inner_event.page,
             action="delete_directory",
@@ -884,11 +906,11 @@ files_container = ft.Container(
                     # ft.IconButton(
                     #     ft.Icons.DELETE, on_click=lambda e: print("Delete File")
                     # ),
-                    # ft.IconButton(
-                    #     ft.Icons.FOLDER_OPEN, on_click=lambda e: print("Open Folder")
-                    # ),
                     ft.IconButton(
-                        ft.Icons.CREATE_NEW_FOLDER,
+                        ft.Icons.DRIVE_FOLDER_UPLOAD_OUTLINED, on_click=upload_directory
+                    ),
+                    ft.IconButton(
+                        ft.Icons.CREATE_NEW_FOLDER_OUTLINED,
                         on_click=lambda e: open_create_directory_form(e.page),
                     ),
                     ft.IconButton(
@@ -951,11 +973,11 @@ settings_container = ft.Container(
             # Menu entries below the avatar
             ft.ListView(
                 controls=[
-                    ft.ListTile(
-                        leading=ft.Icon(ft.Icons.ACCOUNT_CIRCLE),
-                        title=ft.Text("个人资料"),
-                        on_click=lambda e: e.page.go("/profile"),
-                    ),
+                    # ft.ListTile(
+                    #     leading=ft.Icon(ft.Icons.ACCOUNT_CIRCLE),
+                    #     title=ft.Text("个人资料"),
+                    #     on_click=lambda e: e.page.go("/profile"),
+                    # ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.SETTINGS),
                         title=ft.Text("设置"),
@@ -1000,9 +1022,6 @@ class HomeModel(Model):
         super().__init__(page)
         self.page.session.set("navigation_bar", self.navigation_bar)
 
-    # def init(self):
-    #     self.page.session.set("home", self)
-
     controls = [
         ft.SafeArea(ft.Container()),
         home_container,
@@ -1010,5 +1029,9 @@ class HomeModel(Model):
         settings_container,
     ]
 
-    # def load_directory(self):
-    #     load_directory(self.page, current_directory_id)
+    def post_init(self) -> None:
+        self.page.overlay.append(filepicker_ref.current)
+        self.page.update()
+
+        self.page.session.set("load_directory", load_directory)
+        self.page.session.set("current_directory_id", current_directory_id)

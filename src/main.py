@@ -80,8 +80,8 @@ def main(page: ft.Page):
 
     page.session.set("tasks", [])
 
-    page.session.set("version", f"0.1.1.20250729_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.1.1")
+    page.session.set("version", f"0.1.2.20250730_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.1.2")
     page.session.set("protocol_version", 1)
 
     import glob

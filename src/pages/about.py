@@ -347,7 +347,7 @@ class AboutModel(Model):
                         with open(
                             f"{FLET_APP_STORAGE_TEMP}/{self.save_filename}", "wb"
                         ) as f:
-                            for chunk in response.iter_content(chunk_size=2048):
+                            for chunk in response.iter_content(chunk_size=8192):
                                 if self._stop_event.is_set():
                                     break
                                 if chunk:

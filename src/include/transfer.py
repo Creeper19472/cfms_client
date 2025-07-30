@@ -10,6 +10,7 @@ from include.log import getCustomLogger
 from common.notifications import send_error
 import mmap, hashlib, ssl
 from websockets.sync.client import connect
+import websockets.exceptions
 import threading
 import traceback
 from include.constants import FLET_APP_STORAGE_TEMP
@@ -236,7 +237,7 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) 
     websocket.close()
 
 
-def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
+def upload_file_to_server(page: ft.Page, task_id: str, file_path: str, refresh=True) -> None:
 
     upload_lock: threading.Lock = page.session.get("upload_lock")
     if not upload_lock.acquire(timeout=0):
@@ -248,7 +249,10 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
     ssl_context.verify_mode = ssl.CERT_NONE
 
     try:
-        websocket = connect(page.session.get("server_uri"), ssl=ssl_context)
+        websocket = connect(page.session.get("server_uri"), ssl=ssl_context, open_timeout=2)
+    except (TimeoutError, websockets.exceptions.ConnectionClosedError):
+        upload_lock.release()
+        raise
     except Exception as e:
         upload_lock.release()
         raise NotImplementedError
@@ -269,8 +273,13 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
         page.logger.error("Invalid action received for file transfer.")
         return
 
-    sha256 = calculate_sha256(file_path)
     file_size = os.path.getsize(file_path)
+
+    if not file_size:
+        upload_lock.release()
+        raise ValueError("不能上传空文件")
+
+    sha256 = calculate_sha256(file_path)
 
     task_info = {
         "action": "transfer_file",
@@ -329,7 +338,8 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str) -> None:
         upload_lock.release()
         load_directory: function = page.session.get("load_directory")
         current_directory_id = page.session.get("current_directory_id")
-        load_directory(page, current_directory_id)
+        if refresh:
+            load_directory(page, current_directory_id)
 
     except:
         raise
