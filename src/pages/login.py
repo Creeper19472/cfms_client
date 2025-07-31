@@ -4,6 +4,7 @@ from flet_model import Model, route
 import ssl, json, time
 from common.navigation import MyNavBar
 from include.request import build_request
+import threading, logging
 
 # Enhanced Colors & Styles
 PRIMARY_COLOR = "#4f46e5"  # Deep indigo for primary actions
@@ -33,12 +34,17 @@ class LoginModel(Model):
 
     def __init__(self, page: ft.Page):
         super().__init__(page)
-        
+
         self.password_field = ft.TextField(
-            label="Password", password=True, can_reveal_password=True, on_submit=self.request_login
+            label="Password",
+            password=True,
+            can_reveal_password=True,
+            on_submit=self.request_login,
         )
         self.username_field = ft.TextField(
-            label="Username", autofocus=True, on_submit=lambda e: self.password_field.focus()
+            label="Username",
+            autofocus=True,
+            on_submit=lambda e: self.password_field.focus(),
         )
 
         self._server_info = {}
@@ -99,7 +105,9 @@ class LoginModel(Model):
 
     def post_init(self) -> None:
         self._server_info: dict = self.page.session.get("server_info")
-        self.welcome_text.value = f"{self._server_info.get('server_name', 'CFMS Server')}"
+        self.welcome_text.value = (
+            f"{self._server_info.get('server_name', 'CFMS Server')}"
+        )
         self.page.update()
 
     def request_login(self, e):
@@ -144,17 +152,66 @@ class LoginModel(Model):
                 },
             )
 
-            if (code:=response["code"]) == 200:
+            if (code := response["code"]) == 200:
                 self.page.session.set("username", self.username_field.value)
                 self.page.session.set("nickname", response["data"].get("nickname"))
-                self.page.session.set("token", response["data"]["token"]) 
-                self.page.session.set("user_permissions", response["data"]["permissions"])
+                self.page.session.set("token", response["data"]["token"])
+                self.page.session.set("exp", response["data"].get("exp"))
+                self.page.session.set(
+                    "user_permissions", response["data"]["permissions"]
+                )
                 self.page.session.set("user_groups", response["data"]["groups"])
+
+                def refresh_token_periodically():
+                    _token_check_logger = logging.getLogger("token_checker")
+
+                    while True:
+                        time.sleep(60)  # 检查间隔（秒）
+
+                        _token_check_logger.info(
+                            "Checking if the token needs to be refreshed"
+                        )
+
+                        token = self.page.session.get("token")
+                        token_exp = self.page.session.get("exp")
+                        if not token or not token_exp:
+                            _token_check_logger.info(
+                                "Doesn't have the conditions to refresh the token, exiting the check"
+                            )
+                            break
+
+                        if (
+                            token_exp and token_exp - time.time() < 300
+                        ):  # 5分钟内即将过期
+                            _token_check_logger.info("Requesting new token")
+                            refresh_resp = build_request(
+                                self.page,
+                                "refresh_token",
+                                username=self.page.session.get("username"),
+                                token=token,
+                            )
+                            if refresh_resp["code"] == 200:
+                                self.page.session.set(
+                                    "token", refresh_resp["data"]["token"]
+                                )
+                                self.page.session.set(
+                                    "exp", refresh_resp["data"]["exp"]
+                                )
+                                _token_check_logger.info("Requested new token")
+                            else:
+                                _token_check_logger.info("Request failed, exiting")
+                                break  # 刷新失败，退出线程
+                        else:
+                            _token_check_logger.info("No need to request a new token")
+
+                threading.Thread(target=refresh_token_periodically, daemon=True).start()
 
                 if "manage_system" in self.page.session.get("user_permissions"):
                     navigation_bar = self.page.session.get("navigation_bar")
                     navigation_bar.destinations.append(
-                        ft.NavigationBarDestination(icon=ft.Icons.CLOUD_CIRCLE, label="Manage")
+                        ft.NavigationBarDestination(
+                            icon=ft.Icons.CLOUD_CIRCLE, label="Manage"
+                        )
                     )
 
                 self.login_button.visible = True
@@ -164,14 +221,16 @@ class LoginModel(Model):
                 self.username_field.disabled = False
                 self.password_field.disabled = False
                 self.page.go("/home")
-                
+
             else:
                 self.login_button.visible = True
                 self.loading_animation.visible = False
                 self.username_field.disabled = False
                 self.password_field.disabled = False
                 self.update()
-                self.error_bar.content.value = f"登录失败：({code}) {response['message']}"
+                self.error_bar.content.value = (
+                    f"登录失败：({code}) {response['message']}"
+                )
                 self.page.open(self.error_bar)
 
     def sign_up(self, e):

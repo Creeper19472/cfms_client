@@ -25,11 +25,17 @@ class AboutModel(Model):
     spacing = 10
     scroll = True
 
+    _appbar_ref = ft.Ref[ft.AppBar]()
+    _leading_ref = ft.Ref[ft.IconButton]()
+
     appbar = ft.AppBar(
         title=ft.Text("About"),
         leading=ft.IconButton(
-            icon=ft.Icons.ARROW_BACK, on_click=lambda e: e.page.go("/home")
+            icon=ft.Icons.ARROW_BACK,
+            on_click=lambda e: e.page.go("/home"),
+            ref=_leading_ref,
         ),
+        ref=_appbar_ref,
     )
 
     def __init__(self, page: ft.Page):
@@ -385,5 +391,12 @@ class AboutModel(Model):
         self.suc_upgrade_button.disabled = False
         self.page.update()
 
+    def _go_back(self, event: ft.ControlEvent):
+        self.page.views.pop()
+        if last_route := self.page.views[-1].route:
+            self.page.go(last_route)
+
     def post_init(self) -> None:
+        self._leading_ref.current.on_click = self._go_back
+        self._leading_ref.current.update()
         self.check_for_updates()

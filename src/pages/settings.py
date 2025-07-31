@@ -89,11 +89,13 @@ class SettingsModel(Model):
     padding = 20
     spacing = 10
 
+    _leading_ref = ft.Ref[ft.IconButton]()
+
     appbar = ft.AppBar(
         title=ft.Text("Settings"),
         # center_title=True,
         leading=ft.IconButton(
-            icon=ft.Icons.ARROW_BACK, on_click=lambda e: e.page.go("/home")
+            icon=ft.Icons.ARROW_BACK, ref=_leading_ref
         ),
     )
 
@@ -113,3 +115,12 @@ class SettingsModel(Model):
 
     def __init__(self, page: ft.Page):
         super().__init__(page)
+
+    def _go_back(self, event: ft.ControlEvent):
+        self.page.views.pop()
+        if last_route := self.page.views[-1].route:
+            self.page.go(last_route)
+
+    def post_init(self) -> None:
+        self._leading_ref.current.on_click = self._go_back
+        self._leading_ref.current.update()

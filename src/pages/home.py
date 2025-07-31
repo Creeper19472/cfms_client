@@ -88,7 +88,7 @@ class MyNavBar(ft.NavigationBar):
                     "refresh_user_list"
                 )
                 _refresh_user_list_function(e.page, _update_page=False)
-                self.page.go("/manage")
+                self.page.go("/home/manage")
             # case 4:
             #     self.page.go("/logos")
             # case 5:
@@ -981,12 +981,12 @@ settings_container = ft.Container(
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.SETTINGS),
                         title=ft.Text("设置"),
-                        on_click=lambda e: e.page.go("/settings"),
+                        on_click=lambda e: e.page.go("/home/settings"),
                     ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.INFO),
                         title=ft.Text("关于"),
-                        on_click=lambda e: e.page.go("/about"),
+                        on_click=lambda e: e.page.go("/home/about"),
                     ),
                 ]
             ),

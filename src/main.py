@@ -22,10 +22,6 @@ from include.constants import FLET_APP_STORAGE_TEMP
 import logging
 logging.basicConfig(level=logging.INFO)
 
-import logging
-logging.basicConfig(level=logging.INFO)
-
-
 def main(page: ft.Page):
     # Page settings
     page.title = "CFMS Client"
@@ -80,8 +76,8 @@ def main(page: ft.Page):
 
     page.session.set("tasks", [])
 
-    page.session.set("version", f"0.1.2.20250730_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.1.2")
+    page.session.set("version", f"0.1.3.20250731_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.1.3")
     page.session.set("protocol_version", 1)
 
     import glob

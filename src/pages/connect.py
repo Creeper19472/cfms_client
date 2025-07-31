@@ -44,6 +44,13 @@ class ConnectToServerModel(Model):
 
     appbar = ft.AppBar(title=ft.Text("Connect to Server"), center_title=True)
 
+    floating_action_button = ft.FloatingActionButton(
+        icon=ft.Icons.BROWSER_UPDATED_OUTLINED,
+        on_click=lambda event: event.page.go("/connect/about"),
+        tooltip="检查更新"
+    )
+    floating_action_button_location = ft.FloatingActionButtonLocation.END_FLOAT
+
     def connect_button_clicked(self, e):
         self.connect_button.visible = False
         self.loading_animation.visible = True

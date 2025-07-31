@@ -78,10 +78,8 @@ class MoveObjectModel(Model):
         )
 
         self.controls = [self.files_container]
-        print("__init__ called")
 
     def post_init(self):
-        print("post_init called")
         self.current_directory_id = self.route_data.get("current_directory_id", None)
 
         if self.current_directory_id == "None":
