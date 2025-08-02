@@ -41,6 +41,12 @@ def main(page: ft.Page):
 
     page.on_keyboard_event = on_keyboard
 
+    def event(e: ft.AppLifecycleStateChangeEvent):
+        if e.data=='detach' and page.platform == ft.PagePlatform.ANDROID:
+            os._exit(1)
+
+    page.on_app_lifecycle_state_change = event
+
     page.decoration = ft.BoxDecoration(
         gradient=ft.LinearGradient(
             begin=ft.alignment.top_left,
@@ -76,8 +82,8 @@ def main(page: ft.Page):
 
     page.session.set("tasks", [])
 
-    page.session.set("version", f"0.1.3.20250731_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.1.3")
+    page.session.set("version", f"0.1.4.20250803_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.1.4")
     page.session.set("protocol_version", 1)
 
     import glob
@@ -86,13 +92,13 @@ def main(page: ft.Page):
     for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/*.zip"):
         os.remove(file)
 
-    for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/.apk"):
+    for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/*.apk"):
         os.remove(file)
 
-    for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/.sha1"):
+    for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/*.sha1"):
         os.remove(file)
 
-    for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/.checksum"):
+    for file in glob.glob(f"{FLET_APP_STORAGE_TEMP}/*.checksum"):
         os.remove(file)
 
     page.go("/connect")

@@ -7,8 +7,8 @@ from include.request import build_request
 from include.transfer import receive_file_from_server, upload_file_to_server
 from datetime import datetime
 import threading, os
-from include.upload import upload_directory
-from include.upload import filepicker_ref
+from include.upload import upload_directory, filepicker_ref
+from include.quotes import get_quote
 
 """
 Why not add a logout button to the user interface...... Well, we tried.
@@ -373,7 +373,7 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
     def delete_directory(inner_event: ft.ControlEvent):
         menu_listview.disabled = True
         dialog.modal = True
-        dialog.update() # 时间可能会较长，因此先禁用
+        dialog.update()  # 时间可能会较长，因此先禁用
 
         response = build_request(
             inner_event.page,
@@ -492,15 +492,22 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
                 )
             else:
                 info_listview.controls = [
-                    ft.Text(f"目录ID: {response['data']['directory_id']}"),
-                    ft.Text(f"目录名称: {response['data']['name']}"),
-                    ft.Text(f"子对象数: {response['data']['count_of_child']}"),
                     ft.Text(
-                        f"创建于: {datetime.fromtimestamp(response['data']['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"
+                        f"目录ID: {response['data']['directory_id']}", selectable=True
                     ),
-                    ft.Text(f"父级目录ID: {response['data']['parent_id']}"),
+                    ft.Text(f"目录名称: {response['data']['name']}", selectable=True),
                     ft.Text(
-                        f"访问规则: {response['data']['access_rules'] if not response['data']['info_code'] else "Unavailable"}"
+                        f"子对象数: {response['data']['count_of_child']}",
+                    ),
+                    ft.Text(
+                        f"创建于: {datetime.fromtimestamp(response['data']['created_time']).strftime('%Y-%m-%d %H:%M:%S')}",
+                    ),
+                    ft.Text(
+                        f"父级目录ID: {response['data']['parent_id']}", selectable=True
+                    ),
+                    ft.Text(
+                        f"访问规则: {response['data']['access_rules'] if not response['data']['info_code'] else "Unavailable"}",
+                        selectable=True,
                     ),
                 ]
                 this_loading_animation.visible = False
@@ -700,18 +707,23 @@ def on_document_right_click_menu(e: ft.ControlEvent):
                 )
             else:
                 info_listview.controls = [
-                    ft.Text(f"文档ID: {response['data']['document_id']}"),
-                    ft.Text(f"文档标题: {response['data']['title']}"),
+                    ft.Text(
+                        f"文档ID: {response['data']['document_id']}", selectable=True
+                    ),
+                    ft.Text(f"文档标题: {response['data']['title']}", selectable=True),
                     ft.Text(f"文档大小: {response['data']['size']}"),
                     ft.Text(
-                        f"创建于: {datetime.fromtimestamp(response['data']['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"
+                        f"创建于: {datetime.fromtimestamp(response['data']['created_time']).strftime('%Y-%m-%d %H:%M:%S')}",
                     ),
                     ft.Text(
-                        f"最后更改时间: {datetime.fromtimestamp(response['data']['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}"
+                        f"最后更改时间: {datetime.fromtimestamp(response['data']['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}",
                     ),
-                    ft.Text(f"父级目录ID: {response['data']['parent_id']}"),
                     ft.Text(
-                        f"访问规则: {response['data']['access_rules'] if not response['data']['info_code'] else "Unavailable"}"
+                        f"父级目录ID: {response['data']['parent_id']}", selectable=True
+                    ),
+                    ft.Text(
+                        f"访问规则: {response['data']['access_rules'] if not response['data']['info_code'] else "Unavailable"}",
+                        selectable=True,
                     ),
                 ]
                 this_loading_animation.visible = False
@@ -963,7 +975,7 @@ settings_container = ft.Container(
                     ft.Column(
                         controls=[
                             settings_username_display,
-                            ft.Text("星垂平野阔，月涌大江流。"),
+                            ft.Text(get_quote()),
                         ],
                         spacing=0,
                     ),

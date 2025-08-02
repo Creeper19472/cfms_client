@@ -380,7 +380,7 @@ class AboutModel(Model):
                     requests.exceptions.ConnectionError,
                     requests.exceptions.SSLError,
                 ) as e:
-                    send_error(self.page, f"在更新时发生错误：{e.strerror}")
+                    send_error(self.page, f"在更新时发生错误：{str(e)}")
                     return False
 
         # Start the download in a separate thread
