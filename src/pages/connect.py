@@ -49,7 +49,7 @@ class ConnectToServerModel(Model):
     floating_action_button = ft.FloatingActionButton(
         icon=ft.Icons.BROWSER_UPDATED_OUTLINED,
         on_click=lambda event: event.page.go("/connect/about"),
-        tooltip="检查更新"
+        tooltip="检查更新",
     )
     floating_action_button_location = ft.FloatingActionButtonLocation.END_FLOAT
 
@@ -94,9 +94,13 @@ class ConnectToServerModel(Model):
                 return
 
             server_info_response = build_request(self.page, "server_info")
-            if (server_protocol_version:=server_info_response["data"]["protocol_version"]) > self.page.session.get(
-                "protocol_version"
-            ):
+            if (
+                server_protocol_version := server_info_response["data"][
+                    "protocol_version"
+                ]
+            ) > self.page.session.get("protocol_version"):
+                self.page.session.get("websocket").close()
+                self.page.session.set("websocket", None)
                 self.connect_button.visible = True
                 self.loading_animation.visible = False
                 self.input_text_field.disabled = False
@@ -112,7 +116,14 @@ class ConnectToServerModel(Model):
             self.page.title = f"CFMS Client - {server_address}"
 
             # set listener
-            listener_thread = threading.Thread(target=listen_to_server, args=(self.page, server_address,), daemon=True)
+            listener_thread = threading.Thread(
+                target=listen_to_server,
+                args=(
+                    self.page,
+                    server_address,
+                ),
+                daemon=True,
+            )
             listener_thread.start()
 
             # self.ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
