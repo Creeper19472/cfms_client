@@ -11,6 +11,8 @@ from flet_permission_handler import (
 )
 from common.notifications import send_error
 from include.request import build_request
+from include.listener import listen_to_server
+import threading
 
 # Enhanced Colors & Styles
 PRIMARY_COLOR = "#4f46e5"  # Deep indigo for primary actions
@@ -92,14 +94,14 @@ class ConnectToServerModel(Model):
                 return
 
             server_info_response = build_request(self.page, "server_info")
-            if server_info_response["data"]["protocol_version"] > self.page.session.get(
+            if (server_protocol_version:=server_info_response["data"]["protocol_version"]) > self.page.session.get(
                 "protocol_version"
             ):
                 self.connect_button.visible = True
                 self.loading_animation.visible = False
                 self.input_text_field.disabled = False
                 self.error_bar.content.value: str = (
-                    "您正在连接到一个使用更高版本协议的服务器，请更新客户端。"
+                    f"您正在连接到一个使用更高版本协议的服务器（协议版本 {server_protocol_version}），请更新客户端。"
                 )
                 self.page.update()
                 self.page.open(self.error_bar)
@@ -108,6 +110,10 @@ class ConnectToServerModel(Model):
             self.page.session.set("server_info", server_info_response["data"])
             self.page.session.set("server_uri", server_address)
             self.page.title = f"CFMS Client - {server_address}"
+
+            # set listener
+            listener_thread = threading.Thread(target=listen_to_server, args=(self.page, server_address,), daemon=True)
+            listener_thread.start()
 
             # self.ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
             # self.ph.request_permission(PermissionType.STORAGE)

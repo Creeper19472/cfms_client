@@ -10,6 +10,7 @@ from pages.manage import ManageModel
 from pages.about import AboutModel
 from pages.settings import SettingsModel
 from pages.tasks import TasksModel
+from pages.lockdown import LockdownModel
 from pages.interface.move import MoveObjectModel
 import threading, sys, platform, os
 from flet_permission_handler.permission_handler import (
@@ -82,9 +83,9 @@ def main(page: ft.Page):
 
     page.session.set("tasks", [])
 
-    page.session.set("version", f"0.1.4.20250803_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.1.4")
-    page.session.set("protocol_version", 1)
+    page.session.set("version", f"0.1.5.20250805_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.1.5")
+    page.session.set("protocol_version", 2)
 
     import glob
 

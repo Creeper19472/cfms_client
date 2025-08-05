@@ -9,6 +9,7 @@ from datetime import datetime
 import threading, os
 from include.upload import upload_directory, filepicker_ref
 from include.quotes import get_quote
+from include.function.lockdown import go_lockdown
 
 """
 Why not add a logout button to the user interface...... Well, we tried.
@@ -1047,3 +1048,9 @@ class HomeModel(Model):
 
         self.page.session.set("load_directory", load_directory)
         self.page.session.set("current_directory_id", current_directory_id)
+        self.page.session.set("initialization_complete", True)
+
+        if self.page.session.get("server_info")[
+            "lockdown"
+        ] and "bypass_lockdown" not in self.page.session.get("user_permissions"):
+            go_lockdown(self.page)

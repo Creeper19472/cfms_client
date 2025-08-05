@@ -1022,6 +1022,38 @@ def refresh_group_list(page: ft.Page, _update_page=True):
             group_listview.update()
 
 
+def apply_lockdown(event: ft.ControlEvent):
+    # 事先更新用户数据
+    user_data_response = build_request(
+        event.page,
+        action="get_user_info",
+        data={
+            "username": event.page.session.get("username"),
+        },
+        username=event.page.session.get("username"),
+        token=event.page.session.get("token"),
+    )
+    event.page.session.set("nickname", user_data_response["data"].get("nickname"))
+    event.page.session.set(
+        "user_permissions", user_data_response["data"]["permissions"]
+    )
+    event.page.session.set("user_groups", user_data_response["data"]["groups"])
+
+    response = build_request(
+        event.page,
+        "lockdown",
+        {"status": not event.page.session.get("server_info")["lockdown"]},
+        username=event.page.session.get("username"),
+        token=event.page.session.get("token"),
+    )
+    if response["code"] != 200:
+        send_error(event.page, f"锁闭失败: ({response["code"]}) {response['message']}")
+
+    server_info_response = build_request(event.page, "server_info")
+    event.page.session.set("server_info", server_info_response["data"])
+    return
+
+
 @route("manage")
 class ManageModel(Model):
 
@@ -1036,11 +1068,14 @@ class ManageModel(Model):
     appbar = ft.AppBar(
         title=ft.Text("Management"),
         # center_title=True,
-        leading=ft.IconButton(
-            icon=ft.Icons.ARROW_BACK, ref=_leading_ref
-        ),
+        leading=ft.IconButton(icon=ft.Icons.ARROW_BACK, ref=_leading_ref),
     )
     navigation_bar = ManagementNavBar()
+
+    floating_action_button = ft.FloatingActionButton(
+        icon=ft.Icons.LOCK, on_click=apply_lockdown
+    )
+    floating_action_button_location = "endFloat"
 
     controls = [manage_accounts_container, manage_groups_container]
 

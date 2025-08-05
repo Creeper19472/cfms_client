@@ -5,6 +5,8 @@ from websockets.sync.client import connect
 from common.notifications import send_error
 import threading
 
+from include.function.lockdown import go_lockdown
+
 def build_request(
     page: ft.Page,
     action: str,
@@ -46,7 +48,7 @@ def build_request(
     
     try:
         websocket.send(request_json)
-        response_json = websocket.recv()
+        response = websocket.recv()
     except:
         # send_error(page, "连接中断，正在尝试重新连接。")
         ssl_context = ssl.create_default_context()
@@ -61,11 +63,15 @@ def build_request(
 
         # 重发
         websocket.send(request_json)
-        response_json = websocket.recv()
+        response = websocket.recv()
 
     try:
         communication_lock.release()
     except RuntimeError:
         pass
 
-    return json.loads(response_json)
+    loaded_response: dict = json.loads(response)
+    if loaded_response.get("code") == 999:
+        go_lockdown(page)
+
+    return loaded_response

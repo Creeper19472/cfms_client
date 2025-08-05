@@ -80,9 +80,13 @@ def upload_directory(event: ft.ControlEvent):
                 )
 
                 if mkdir_resp.get("code") != 200:
-                    raise RuntimeError(
-                        f"Failed to create directory {parent_path}: {mkdir_resp.get('message', 'Unknown error')}"
+                    _error_info_ref.current.controls.append(
+                        ft.Text(
+                            f"Failed to create directory {parent_path}: {mkdir_resp.get('message', 'Unknown error')}"
+                        )
                     )
+                    _error_info_ref.current.update()
+                    return
 
                 # 创建当前目录下的所有子目录
                 for dirname, subtree in tree["dirs"].items():
