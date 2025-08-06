@@ -11,7 +11,7 @@ from flet_permission_handler import (
 )
 from common.notifications import send_error
 from include.request import build_request
-from include.listener import listen_to_server
+from include.listener import listen_to_server, server_info_updater
 import threading
 
 # Enhanced Colors & Styles
@@ -125,6 +125,17 @@ class ConnectToServerModel(Model):
                 daemon=True,
             )
             listener_thread.start()
+
+            # set updater
+            updater_thread = threading.Thread(
+                target=server_info_updater,
+                args=(
+                    self.page,
+                    server_address,
+                ),
+                daemon=True,
+            )
+            updater_thread.start()
 
             # self.ph.request_permission(PermissionType.ACCESS_MEDIA_LOCATION)
             # self.ph.request_permission(PermissionType.STORAGE)

@@ -1,6 +1,7 @@
 # type: ignore
 from websockets import ClientConnection
 from include.log import getCustomLogger
+import time
 
 import flet as ft
 from pages.connect import ConnectToServerModel
@@ -19,6 +20,8 @@ from flet_permission_handler.permission_handler import (
     PermissionType,
 )
 from include.constants import FLET_APP_STORAGE_TEMP
+
+from include.controls.emergency import EmergencyInfoBar
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -86,6 +89,18 @@ def main(page: ft.Page):
     page.session.set("version", f"0.1.5.20250805_alpha {page.platform.value}")
     page.session.set("build_version", "v0.1.5")
     page.session.set("protocol_version", 2)
+
+    emergency_info_ref = ft.Ref[ft.Column]()
+
+    def check_emergency():
+        while True:
+            emergency_info_ref.current.visible = bool(page.session.get("lockdown"))
+            emergency_info_ref.current.update()
+            time.sleep(1)
+
+    page.overlay.append(EmergencyInfoBar(ref=emergency_info_ref, visible=False))
+    page.update()
+    page.run_thread(check_emergency)
 
     import glob
 

@@ -4,10 +4,12 @@ from websockets.sync.client import connect
 import flet as ft
 import threading
 
+from include.controls.emergency import EmergencyInfoBar
 from include.function.lockdown import go_lockdown, quit_lockdown
+from include.request import build_request
 
 
-def listen_to_server(page: ft.Page, server_address):
+def get_connection(server_address, max_retries=5):
 
     ssl_context = ssl.create_default_context()
     ssl_context.check_hostname = False
@@ -24,9 +26,19 @@ def listen_to_server(page: ft.Page, server_address):
             break
         except TimeoutError:
             continue
+        except:
+            time.sleep(retry * 2.0)
+            continue
 
     if not websocket:
-        return
+        raise
+
+    return websocket
+
+
+def listen_to_server(page: ft.Page, server_address):
+
+    websocket = get_connection(server_address)
 
     register_request = {"action": "register_listener"}
 
@@ -56,10 +68,22 @@ def listen_to_server(page: ft.Page, server_address):
     listener_event_handler_thread.start()
 
     while True:
-        raw_data = websocket.recv()
+        try:
+            raw_data = websocket.recv()
+        except:
+            get_connection(server_address)
+            continue
         loaded_data = json.loads(raw_data)
         if not event_queue:
             event_id = 0
         else:
             event_id = event_queue[-1][0] + 1
         event_queue.append((event_id, loaded_data))
+
+
+def server_info_updater(page: ft.Page, server_address):
+    while True:
+        response = build_request(page, "server_info", {})
+        page.session.set("server_info", response["data"])
+        page.session.set("lockdown", response["data"]["lockdown"])
+        time.sleep(5)

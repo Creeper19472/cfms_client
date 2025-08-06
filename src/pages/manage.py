@@ -1039,18 +1039,20 @@ def apply_lockdown(event: ft.ControlEvent):
     )
     event.page.session.set("user_groups", user_data_response["data"]["groups"])
 
+    status = not event.page.session.get("lockdown")
+
     response = build_request(
         event.page,
         "lockdown",
-        {"status": not event.page.session.get("server_info")["lockdown"]},
+        {"status": status},
         username=event.page.session.get("username"),
         token=event.page.session.get("token"),
     )
     if response["code"] != 200:
         send_error(event.page, f"锁闭失败: ({response["code"]}) {response['message']}")
+        return
 
-    server_info_response = build_request(event.page, "server_info")
-    event.page.session.set("server_info", server_info_response["data"])
+    event.page.session.set("lockdown", status)
     return
 
 
@@ -1072,8 +1074,9 @@ class ManageModel(Model):
     )
     navigation_bar = ManagementNavBar()
 
+    _fab_ref = ft.Ref[ft.FloatingActionButton]()
     floating_action_button = ft.FloatingActionButton(
-        icon=ft.Icons.LOCK, on_click=apply_lockdown
+        icon=ft.Icons.LOCK, on_click=apply_lockdown, ref=_fab_ref
     )
     floating_action_button_location = "endFloat"
 
@@ -1091,3 +1094,5 @@ class ManageModel(Model):
     def post_init(self) -> None:
         self._leading_ref.current.on_click = self._go_back
         self._leading_ref.current.update()
+        self._fab_ref.current.visible = "apply_lockdown" in self.page.session.get("user_permissions") # type: ignore
+        self._fab_ref.current.update()
