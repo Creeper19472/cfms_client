@@ -1,7 +1,7 @@
 # type: ignore
 from websockets import ClientConnection
 from include.log import getCustomLogger
-import time
+import asyncio
 
 import flet as ft
 from pages.connect import ConnectToServerModel
@@ -86,21 +86,21 @@ def main(page: ft.Page):
 
     page.session.set("tasks", [])
 
-    page.session.set("version", f"0.1.6.20250815_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.1.6")
-    page.session.set("protocol_version", 2)
+    page.session.set("version", f"0.1.7.20250815_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.1.7")
+    page.session.set("protocol_version", 3)
 
     emergency_info_ref = ft.Ref[ft.Column]()
 
-    def check_emergency():
+    async def check_emergency():
         while True:
             emergency_info_ref.current.visible = bool(page.session.get("lockdown"))
             emergency_info_ref.current.update()
-            time.sleep(1)
+            await asyncio.sleep(1)
 
     page.overlay.append(EmergencyInfoBar(ref=emergency_info_ref, visible=False))
     page.update()
-    page.run_thread(check_emergency)
+    page.run_task(check_emergency)
 
     import glob
 

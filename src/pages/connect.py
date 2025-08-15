@@ -109,6 +109,7 @@ class ConnectToServerModel(Model):
                 )
                 self.page.update()
                 self.page.open(self.error_bar)
+                self.page.go("/connect/about")
                 return
 
             self.page.session.set("server_info", server_info_response["data"])

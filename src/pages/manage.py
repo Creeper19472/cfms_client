@@ -1120,7 +1120,7 @@ def refresh_audit_logs(page: ft.Page):
                     ft.DataCell(ft.Text(entry["action"])),
                     ft.DataCell(ft.Text(entry["username"])),
                     ft.DataCell(ft.Text(entry["target"])),
-                    ft.DataCell(ft.Text(str(entry["data"]))),
+                    ft.DataCell(ft.Text(str(entry["data"]) if entry["data"] else None)),
                     ft.DataCell(ft.Text(entry["result"])),
                     ft.DataCell(ft.Text(entry["remote_address"])),
                     ft.DataCell(ft.Text(entry["logged_time"])),

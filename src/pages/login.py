@@ -4,6 +4,7 @@ from flet_model import Model, route
 import ssl, json, time
 from common.navigation import MyNavBar
 from include.request import build_request
+from pages.settings import open_change_passwd_dialog
 import threading, logging, asyncio
 
 # Enhanced Colors & Styles
@@ -221,6 +222,15 @@ class LoginModel(Model):
                 self.username_field.disabled = False
                 self.password_field.disabled = False
                 self.page.go("/home")
+
+            elif code == 403:
+                self.page.session.set("username", self.username_field.value)
+                open_change_passwd_dialog(e, "在登录前必须修改密码。")
+                self.login_button.visible = True
+                self.loading_animation.visible = False
+                self.username_field.disabled = False
+                self.password_field.disabled = False
+                self.update()
 
             else:
                 self.login_button.visible = True

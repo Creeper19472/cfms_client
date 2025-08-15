@@ -1,3 +1,4 @@
+from typing import Optional
 import flet as ft
 from flet_model import Model, route
 from websockets import ClientConnection
@@ -5,7 +6,7 @@ from include.request import build_request
 from common.notifications import send_error
 
 
-def open_change_passwd_dialog(e: ft.ControlEvent):
+def open_change_passwd_dialog(e: ft.ControlEvent, tip: Optional[str] = None):
 
     def request_set_passwd(inner_event: ft.ControlEvent):
         
@@ -58,16 +59,20 @@ def open_change_passwd_dialog(e: ft.ControlEvent):
     )
     cancel_button = ft.TextButton("取消", on_click=lambda e: e.page.close(dialog))
 
+    tip_ref = ft.Ref[ft.Text]()
+
     dialog = ft.AlertDialog(
         title=ft.Text("修改密码"),
         content=ft.Column(
             controls=[
                 old_passwd_field,
                 new_passwd_field,
+                ft.Text(tip, ref=tip_ref, text_align=ft.TextAlign.CENTER)
             ],
             # spacing=15,
             width=400,
             alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             expand=True,
             scroll=ft.ScrollMode.AUTO,
         ),
