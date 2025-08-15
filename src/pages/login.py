@@ -4,7 +4,7 @@ from flet_model import Model, route
 import ssl, json, time
 from common.navigation import MyNavBar
 from include.request import build_request
-import threading, logging
+import threading, logging, asyncio
 
 # Enhanced Colors & Styles
 PRIMARY_COLOR = "#4f46e5"  # Deep indigo for primary actions
@@ -162,11 +162,11 @@ class LoginModel(Model):
                 )
                 self.page.session.set("user_groups", response["data"]["groups"])
 
-                def refresh_token_periodically():
+                async def refresh_token_periodically():
                     _token_check_logger = logging.getLogger("token_checker")
 
                     while True:
-                        time.sleep(60)  # 检查间隔（秒）
+                        await asyncio.sleep(60)  # 检查间隔（秒）
 
                         _token_check_logger.info(
                             "Checking if the token needs to be refreshed"
@@ -204,7 +204,7 @@ class LoginModel(Model):
                         else:
                             _token_check_logger.info("No need to request a new token")
 
-                threading.Thread(target=refresh_token_periodically, daemon=True).start()
+                self.page.run_task(refresh_token_periodically)
 
                 if "manage_system" in self.page.session.get("user_permissions"):
                     navigation_bar = self.page.session.get("navigation_bar")

@@ -1,5 +1,6 @@
 import flet as ft
 from flet_model import Model, route
+import flet_datatable2 as fdt
 from include.request import build_request
 from common.notifications import send_error
 from datetime import datetime
@@ -18,6 +19,7 @@ class ManagementNavBar(ft.NavigationBar):
             ft.NavigationBarDestination(
                 icon=ft.Icons.SETTINGS_APPLICATIONS, label="Settings"
             ),
+            ft.NavigationBarDestination(icon=ft.Icons.ARTICLE, label="Logs"),
         ]
 
         super().__init__(
@@ -33,18 +35,22 @@ class ManagementNavBar(ft.NavigationBar):
             case 0:  # Manage Accounts
                 manage_groups_container.visible = False
                 manage_accounts_container.visible = True
+                view_audit_logs_container.visible = False
                 e.page.update()
                 refresh_user_list(e.page)
 
             case 1:
                 manage_accounts_container.visible = False
                 manage_groups_container.visible = True
+                view_audit_logs_container.visible = False
                 e.page.update()
                 refresh_group_list(e.page)
-            # case 2:
-            #     manage_accounts_container.visible = False
-            #     home_container.visible = False
-            #     self.page.update()
+            case 3:
+                manage_accounts_container.visible = False
+                manage_groups_container.visible = False
+                view_audit_logs_container.visible = True
+                e.page.update()
+                refresh_audit_logs(e.page)
 
 
 def on_user_right_click_menu(e: ft.ControlEvent):
@@ -1056,6 +1062,121 @@ def apply_lockdown(event: ft.ControlEvent):
     return
 
 
+def select_row(e: ft.ControlEvent):
+    print("on_select_row")
+    e.control.selected = not e.control.selected
+    e.control.update()
+
+
+def sort_column(e: ft.DataColumnSortEvent):
+    print(f"Sorting column {e.column_index}, ascending={e.ascending}")
+
+
+def all_selected(e: ft.ControlEvent):
+    print("All selected")
+
+
+audit_logs_datatable = fdt.DataTable2(
+    # heading_row_color=ft.Colors.SECONDARY_CONTAINER,
+    horizontal_margin=12,
+    sort_ascending=True,
+    on_select_all=all_selected,
+    sort_column_index=7,
+    bottom_margin=10,
+    min_width=600,
+    columns=[
+        fdt.DataColumn2(
+            ft.Text("ID"),
+            size=fdt.Size.L,
+            heading_row_alignment=ft.MainAxisAlignment.START,
+            on_sort=sort_column,  # type: ignore
+        ),
+        fdt.DataColumn2(ft.Text("Action")),
+        fdt.DataColumn2(ft.Text("Username")),
+        fdt.DataColumn2(ft.Text("Target")),
+        fdt.DataColumn2(
+            ft.Text("Data"),
+            size=fdt.Size.M,
+        ),
+        fdt.DataColumn2(ft.Text("Result"), size=fdt.Size.S, numeric=True),
+        fdt.DataColumn2(ft.Text("Remote Address")),
+        fdt.DataColumn2(ft.Text("Time"), numeric=True),
+    ],
+    rows=[],
+    expand=True,
+    visible=False,
+)
+
+
+def refresh_audit_logs(page: ft.Page):
+
+    def update_audit_logs_controls(entries: list[dict]):
+        assert type(audit_logs_datatable.rows) is list
+
+        audit_logs_datatable.rows = [
+            fdt.DataRow2(
+                cells=[
+                    ft.DataCell(ft.Text(entry["id"])),
+                    ft.DataCell(ft.Text(entry["action"])),
+                    ft.DataCell(ft.Text(entry["username"])),
+                    ft.DataCell(ft.Text(entry["target"])),
+                    ft.DataCell(ft.Text(str(entry["data"]))),
+                    ft.DataCell(ft.Text(entry["result"])),
+                    ft.DataCell(ft.Text(entry["remote_address"])),
+                    ft.DataCell(ft.Text(entry["logged_time"])),
+                ]
+            )
+            for entry in entries
+        ]
+
+    loading_animation.visible = True
+    audit_logs_datatable.visible = False
+    page.update()
+
+    response = build_request(
+        page,
+        action="view_audit_logs",
+        data={"offset": 0, "count": 100},
+        username=page.session.get("username"),
+        token=page.session.get("token"),
+    )
+    loading_animation.visible = False
+    page.update()
+    if (code := response["code"]) != 200:
+        send_error(page, f"加载失败: ({code}) {response['message']}")
+    else:
+        update_audit_logs_controls(response["data"]["entries"])
+        audit_logs_datatable.visible = True
+        audit_logs_datatable.update()
+
+
+view_audit_logs_container = ft.Container(
+    content=ft.Column(
+        controls=[
+            ft.Text("审计日志", size=24, weight=ft.FontWeight.BOLD),
+            ft.Row(
+                controls=[
+                    ft.IconButton(
+                        ft.Icons.REFRESH,
+                        on_click=lambda e: refresh_audit_logs(e.page),
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.START,
+                spacing=10,
+            ),
+            ft.Divider(),
+            loading_animation,
+            audit_logs_datatable,
+        ],
+    ),
+    margin=10,
+    padding=10,
+    alignment=ft.alignment.top_center,
+    visible=False,
+    expand=True,
+)
+
+
 @route("manage")
 class ManageModel(Model):
 
@@ -1080,7 +1201,11 @@ class ManageModel(Model):
     )
     floating_action_button_location = "endFloat"
 
-    controls = [manage_accounts_container, manage_groups_container]
+    controls = [
+        manage_accounts_container,
+        manage_groups_container,
+        view_audit_logs_container,
+    ]
 
     def __init__(self, page: ft.Page):
         super().__init__(page)
@@ -1094,5 +1219,5 @@ class ManageModel(Model):
     def post_init(self) -> None:
         self._leading_ref.current.on_click = self._go_back
         self._leading_ref.current.update()
-        self._fab_ref.current.visible = "apply_lockdown" in self.page.session.get("user_permissions") # type: ignore
+        self._fab_ref.current.visible = "apply_lockdown" in self.page.session.get("user_permissions")  # type: ignore
         self._fab_ref.current.update()

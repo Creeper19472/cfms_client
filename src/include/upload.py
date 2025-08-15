@@ -3,7 +3,7 @@ import os
 
 import websockets.exceptions
 from include.request import build_request
-from include.transfer import upload_file_to_server
+from include.function.transfer import upload_file_to_server
 import requests
 
 

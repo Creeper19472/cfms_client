@@ -7,6 +7,8 @@ import threading
 
 from include.function.lockdown import go_lockdown
 
+communication_lock = threading.Lock()
+
 def build_request(
     page: ft.Page,
     action: str,
@@ -15,9 +17,6 @@ def build_request(
     username=None,
     token=None,
 ) -> dict:
-    
-    communication_lock: threading.Lock = page.session.get("communication_lock") # type: ignore
-    # assert isinstance(communication_lock)
 
     request = {
         "action": action,
@@ -26,6 +25,8 @@ def build_request(
         "token": token,
         "timestamp": time.time(),
     }
+
+    # print(request)
 
     request_json = json.dumps(request, ensure_ascii=False)
     
@@ -68,7 +69,7 @@ def build_request(
     try:
         communication_lock.release()
     except RuntimeError:
-        pass
+        websocket.close()
 
     loaded_response: dict = json.loads(response)
     if loaded_response.get("code") == 999:

@@ -4,7 +4,7 @@ from flet_model import Model, route
 from websockets import ClientConnection
 from common.notifications import send_error
 from include.request import build_request
-from include.transfer import receive_file_from_server, upload_file_to_server
+from include.function.transfer import receive_file_from_server, upload_file_to_server
 from datetime import datetime
 import threading, os
 from include.upload import upload_directory, filepicker_ref

@@ -82,12 +82,12 @@ def main(page: ft.Page):
     page.logger = getCustomLogger("client")
     page.session.set("download_lock", threading.Lock())
     page.session.set("upload_lock", threading.Lock())
-    page.session.set("communication_lock", threading.Lock())
+    # page.session.set("communication_lock", threading.Lock())
 
     page.session.set("tasks", [])
 
-    page.session.set("version", f"0.1.5.20250805_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.1.5")
+    page.session.set("version", f"0.1.6.20250815_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.1.6")
     page.session.set("protocol_version", 2)
 
     emergency_info_ref = ft.Ref[ft.Column]()
