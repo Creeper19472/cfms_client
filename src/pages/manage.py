@@ -1,3 +1,4 @@
+import time
 import flet as ft
 from flet_model import Model, route
 import flet_datatable2 as fdt
@@ -1079,6 +1080,7 @@ def all_selected(e: ft.ControlEvent):
 audit_logs_datatable = fdt.DataTable2(
     # heading_row_color=ft.Colors.SECONDARY_CONTAINER,
     horizontal_margin=12,
+    data_row_height=60,
     sort_ascending=True,
     on_select_all=all_selected,
     sort_column_index=7,
@@ -1093,14 +1095,17 @@ audit_logs_datatable = fdt.DataTable2(
         ),
         fdt.DataColumn2(ft.Text("Action")),
         fdt.DataColumn2(ft.Text("Username")),
-        fdt.DataColumn2(ft.Text("Target")),
+        fdt.DataColumn2(
+            ft.Text("Target"),
+            size=fdt.Size.L,
+        ),
         fdt.DataColumn2(
             ft.Text("Data"),
             size=fdt.Size.M,
         ),
         fdt.DataColumn2(ft.Text("Result"), size=fdt.Size.S, numeric=True),
-        fdt.DataColumn2(ft.Text("Remote Address")),
-        fdt.DataColumn2(ft.Text("Time"), numeric=True),
+        fdt.DataColumn2(ft.Text("Remote Address"), size=fdt.Size.M),
+        fdt.DataColumn2(ft.Text("Time"), numeric=True, size=fdt.Size.M),
     ],
     rows=[],
     expand=True,
@@ -1113,21 +1118,51 @@ def refresh_audit_logs(page: ft.Page):
     def update_audit_logs_controls(entries: list[dict]):
         assert type(audit_logs_datatable.rows) is list
 
-        audit_logs_datatable.rows = [
-            fdt.DataRow2(
-                cells=[
-                    ft.DataCell(ft.Text(entry["id"])),
-                    ft.DataCell(ft.Text(entry["action"])),
-                    ft.DataCell(ft.Text(entry["username"])),
-                    ft.DataCell(ft.Text(entry["target"])),
-                    ft.DataCell(ft.Text(str(entry["data"]) if entry["data"] else None)),
-                    ft.DataCell(ft.Text(entry["result"])),
-                    ft.DataCell(ft.Text(entry["remote_address"])),
-                    ft.DataCell(ft.Text(entry["logged_time"])),
-                ]
+        audit_logs_datatable.rows.clear()
+
+        audit_logged_actions = set()
+        for entry in entries:
+            audit_logs_datatable.rows.append(
+                fdt.DataRow2(
+                    cells=[
+                        ft.DataCell(ft.Text(entry["id"])),
+                        ft.DataCell(ft.Text(entry["action"])),
+                        ft.DataCell(ft.Text(entry["username"])),
+                        ft.DataCell(ft.Text(entry["target"])),
+                        ft.DataCell(
+                            ft.Text(str(entry["data"]) if entry["data"] else None)
+                        ),
+                        ft.DataCell(ft.Text(entry["result"])),
+                        ft.DataCell(ft.Text(entry["remote_address"])),
+                        ft.DataCell(
+                            ft.Text(
+                                datetime.fromtimestamp(entry["logged_time"]).strftime(
+                                    "%Y-%m-%d %H:%M:%S"
+                                )
+                            )
+                        ),
+                    ]
+                )
             )
-            for entry in entries
-        ]
+            audit_logged_actions.add(entry["action"])
+
+        # c1 = time.time()
+
+        audit_action_segmented_button_ref.current.segments.clear()
+        for action in audit_logged_actions:
+            audit_action_segmented_button_ref.current.segments.append(
+                ft.Segment(
+                    value=action,
+                    label=ft.Text(action),
+                    icon=ft.Icon(ft.Icons.CHECK_BOX_OUTLINE_BLANK),
+                )
+            )
+
+        audit_action_segmented_button_ref.current.selected = audit_logged_actions
+        audit_action_segmented_button_ref.current.update()
+
+        # c2 = time.time()
+        # print(c2-c1)
 
     loading_animation.visible = True
     audit_logs_datatable.visible = False
@@ -1136,7 +1171,7 @@ def refresh_audit_logs(page: ft.Page):
     response = build_request(
         page,
         action="view_audit_logs",
-        data={"offset": 0, "count": 100},
+        data={"offset": audit_view_offset, "count": audit_view_count},
         username=page.session.get("username"),
         token=page.session.get("token"),
     )
@@ -1145,10 +1180,62 @@ def refresh_audit_logs(page: ft.Page):
     if (code := response["code"]) != 200:
         send_error(page, f"加载失败: ({code}) {response['message']}")
     else:
+        view_start = audit_view_offset + 1
+        view_end = audit_view_offset + audit_view_count
+        if view_end > response["data"]["total"]:
+            view_end = response["data"]["total"]
+        audit_info_ref.current.value = f"{view_start} - {view_end} 条，共 {response["data"]["total"]} 条"
+        audit_info_ref.current.update()
+        audit_navigate_before_ref.current.disabled = audit_view_offset <= 0
+        audit_navigate_before_ref.current.update()
+        audit_navigate_next_ref.current.disabled = (
+            audit_view_offset + audit_view_count >= response["data"]["total"]
+        )
+        audit_navigate_next_ref.current.update()
         update_audit_logs_controls(response["data"]["entries"])
         audit_logs_datatable.visible = True
         audit_logs_datatable.update()
 
+
+def audit_view_navigate_before_pressed(event: ft.ControlEvent):
+    global audit_view_offset
+    audit_view_offset -= audit_view_count
+    if audit_view_offset < 0:
+        audit_view_offset = 0
+    refresh_audit_logs(event.page)
+
+
+def audit_view_navigate_next_pressed(event: ft.ControlEvent):
+    global audit_view_offset
+    audit_view_offset += audit_view_count
+    refresh_audit_logs(event.page)
+
+
+audit_info_ref = ft.Ref[ft.Text]()
+audit_navigate_before_ref = ft.Ref[ft.IconButton]()
+audit_navigate_next_ref = ft.Ref[ft.IconButton]()
+audit_action_segmented_button_ref = ft.Ref[ft.SegmentedButton]()
+audit_view_offset = 0
+audit_view_count = 100
+# audit_logged_actions = {
+#     "login",
+#     "get_document",
+#     "create_document",
+#     "upload_document",
+#     "delete_document",
+#     "rename_document",
+#     "move_document",
+#     "get_document_info",
+#     "set_document_rules",
+#     "list_directory",
+#     "get_directory_info",
+#     "create_directory",
+#     "delete_directory",
+#     "rename_directory",
+#     "move_directory",
+#     "list_users",
+#     ""
+# }
 
 view_audit_logs_container = ft.Container(
     content=ft.Column(
@@ -1160,9 +1247,33 @@ view_audit_logs_container = ft.Container(
                         ft.Icons.REFRESH,
                         on_click=lambda e: refresh_audit_logs(e.page),
                     ),
+                    ft.IconButton(
+                        ft.Icons.NAVIGATE_BEFORE,
+                        on_click=audit_view_navigate_before_pressed,
+                        ref=audit_navigate_before_ref,
+                    ),
+                    ft.IconButton(
+                        ft.Icons.NAVIGATE_NEXT,
+                        on_click=audit_view_navigate_next_pressed,
+                        ref=audit_navigate_next_ref,
+                    ),
+                    ft.Text(ref=audit_info_ref),
                 ],
                 alignment=ft.MainAxisAlignment.START,
                 spacing=10,
+            ),
+            ft.SegmentedButton(
+                [
+                    ft.Segment(
+                        value="all",
+                        label=ft.Text("全部"),
+                        icon=ft.Icon(ft.Icons.ALL_INBOX),
+                    )
+                ],
+                selected={"all"},
+                allow_empty_selection=False,
+                allow_multiple_selection=True,
+                ref=audit_action_segmented_button_ref,
             ),
             ft.Divider(),
             loading_animation,

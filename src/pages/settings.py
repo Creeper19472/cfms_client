@@ -83,6 +83,8 @@ def open_change_passwd_dialog(e: ft.ControlEvent, tip: Optional[str] = None):
         ],
         # scrollable=True,
     )
+
+    tip_ref.current.visible = bool(tip)
     e.page.open(dialog)
 
 

@@ -207,7 +207,14 @@ class LoginModel(Model):
 
                 self.page.run_task(refresh_token_periodically)
 
-                if "manage_system" in self.page.session.get("user_permissions"):
+                if {
+                    "manage_system",
+                    "view_audit_logs",
+                    "list_users",
+                    "list_groups",
+                    "apply_lockdown",
+                    "bypass_lockdown",
+                } & set(self.page.session.get("user_permissions")):
                     navigation_bar = self.page.session.get("navigation_bar")
                     navigation_bar.destinations.append(
                         ft.NavigationBarDestination(
