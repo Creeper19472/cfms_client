@@ -93,6 +93,13 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) 
     else:
         file_path = f"./{filename if filename else sha256[0:17]}"
 
+    if not file_size:
+        with open(file_path, "wb") as f:
+            f.truncate(0)
+        download_lock.release()
+        page.logger.info(f"Empty file, skipping")
+        return
+
     try:
         progress_bar = ft.ProgressBar()
         progress_info = ft.Text(text_align=ft.TextAlign.CENTER, color=ft.Colors.WHITE)
@@ -185,9 +192,7 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) 
 
             # 删除临时文件夹
             progress_bar.value = None
-            progress_info.value = (
-                f"正在删除临时文件"
-            )
+            progress_info.value = f"正在删除临时文件"
             page.update()
 
             shutil.rmtree(downloading_path)
@@ -237,7 +242,9 @@ def receive_file_from_server(page: ft.Page, task_id: str, filename: str = None) 
     websocket.close()
 
 
-def upload_file_to_server(page: ft.Page, task_id: str, file_path: str, refresh=True) -> None:
+def upload_file_to_server(
+    page: ft.Page, task_id: str, file_path: str, refresh=True
+) -> None:
 
     upload_lock: threading.Lock = page.session.get("upload_lock")
     if not upload_lock.acquire(timeout=0):
@@ -250,7 +257,9 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str, refresh=T
 
     try:
         try:
-            websocket = connect(page.session.get("server_uri"), ssl=ssl_context, open_timeout=2)
+            websocket = connect(
+                page.session.get("server_uri"), ssl=ssl_context, open_timeout=2
+            )
         except (TimeoutError, websockets.exceptions.ConnectionClosedError):
             upload_lock.release()
             raise
@@ -273,11 +282,11 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str, refresh=T
 
         file_size = os.path.getsize(file_path)
 
-        if not file_size:
-            upload_lock.release()
-            raise ValueError("不能上传空文件")
+        # if not file_size:
+        #     upload_lock.release()
+        #     raise ValueError("不能上传空文件")
 
-        sha256 = calculate_sha256(file_path)
+        sha256 = calculate_sha256(file_path) if file_size else None
 
         task_info = {
             "action": "transfer_file",
@@ -289,58 +298,58 @@ def upload_file_to_server(page: ft.Page, task_id: str, file_path: str, refresh=T
         websocket.send(json.dumps(task_info, ensure_ascii=False))
 
         received_response = websocket.recv()
-        if received_response != "ready":
+        if received_response not in ["ready", "stop"]:
+            upload_lock.release()
             page.logger.error(
                 f"Server did not acknowledge readiness for file transfer: {received_response}"
             )
             return
 
-        page.logger.info("File transmission begin.")
+        
+        if received_response == "ready":
+            page.logger.info("File transmission begin.")
 
-        try:
-            progress_bar = ft.ProgressBar()
-            progress_info = ft.Text(text_align="center", color=ft.Colors.WHITE)
-            progress_column = ft.Column(
-                controls=[progress_bar, progress_info],
-                alignment=(
-                    ft.MainAxisAlignment.START
-                    if os.name == "nt"
-                    else ft.MainAxisAlignment.END
-                ),
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            )
-            page.overlay.append(progress_column)
-            # page.overlay.append(progress_bar)
-            page.update()
+            try:
+                progress_bar = ft.ProgressBar()
+                progress_info = ft.Text(text_align="center", color=ft.Colors.WHITE)
+                progress_column = ft.Column(
+                    controls=[progress_bar, progress_info],
+                    alignment=(
+                        ft.MainAxisAlignment.START
+                        if os.name == "nt"
+                        else ft.MainAxisAlignment.END
+                    ),
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                )
+                page.overlay.append(progress_column)
+                # page.overlay.append(progress_bar)
+                page.update()
 
-            chunk_size = 8192
-            with open(file_path, "rb") as f:
-                while True:
-                    # print("loop")
-                    chunk = f.read(chunk_size)
-                    websocket.send(chunk)
+                chunk_size = 8192
+                with open(file_path, "rb") as f:
+                    while True:
+                        # print("loop")
+                        chunk = f.read(chunk_size)
+                        websocket.send(chunk)
 
-                    progress_bar.value = f.tell() / file_size
-                    progress_info.value = (
-                        f"{f.tell() / 1024 / 1024:.2f} MB/{file_size / 1024 / 1024:.2f} MB"
-                    )
-                    page.update()
+                        progress_bar.value = f.tell() / file_size
+                        progress_info.value = f"{f.tell() / 1024 / 1024:.2f} MB/{file_size / 1024 / 1024:.2f} MB"
+                        page.update()
 
-                    if not chunk or len(chunk) < chunk_size:
-                        break
+                        if not chunk or len(chunk) < chunk_size:
+                            break
 
-            page.overlay.remove(progress_column)
-            page.update()
-            page.logger.info(f"File {file_path} sent successfully.")
-
-            upload_lock.release()
-            load_directory: function = page.session.get("load_directory")
-            current_directory_id = page.session.get("current_directory_id")
-            if refresh:
-                load_directory(page, current_directory_id)
-
-        except:
-            raise
+                page.overlay.remove(progress_column)
+                page.update()
+                page.logger.info(f"File {file_path} sent successfully.")
+            except:
+                raise
+            
+        upload_lock.release()
+        load_directory: function = page.session.get("load_directory")
+        current_directory_id = page.session.get("current_directory_id")
+        if refresh:
+            load_directory(page, current_directory_id)        
 
         websocket.close()
 

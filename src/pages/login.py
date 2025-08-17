@@ -4,7 +4,7 @@ from flet_model import Model, route
 import ssl, json, time
 from common.navigation import MyNavBar
 from include.request import build_request
-from pages.settings import open_change_passwd_dialog
+from pages.interface.passwd import open_change_passwd_dialog
 import threading, logging, asyncio
 
 # Enhanced Colors & Styles

@@ -71,7 +71,7 @@ def listen_to_server(page: ft.Page, server_address):
         try:
             raw_data = websocket.recv()
         except:
-            get_connection(server_address)
+            websocket = get_connection(server_address)
             continue
         loaded_data = json.loads(raw_data)
         if not event_queue:

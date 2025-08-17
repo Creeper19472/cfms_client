@@ -10,6 +10,8 @@ import threading, os
 from include.upload import upload_directory, filepicker_ref
 from include.quotes import get_quote
 from include.function.lockdown import go_lockdown
+from pages.interface.passwd import open_change_passwd_dialog
+
 
 """
 Why not add a logout button to the user interface...... Well, we tried.
@@ -873,8 +875,8 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                         f"Last modified: {datetime.fromtimestamp(document['last_modified']).strftime('%Y-%m-%d %H:%M:%S')}\n"
                         + (
                             f"{document["size"] / 1024 / 1024:.3f} MB"
-                            if document["size"]
-                            else ""
+                            if document["size"] > 0
+                            else "0 Byte"
                         )
                     ),
                     is_three_line=True,
@@ -986,11 +988,11 @@ settings_container = ft.Container(
             # Menu entries below the avatar
             ft.ListView(
                 controls=[
-                    # ft.ListTile(
-                    #     leading=ft.Icon(ft.Icons.ACCOUNT_CIRCLE),
-                    #     title=ft.Text("个人资料"),
-                    #     on_click=lambda e: e.page.go("/profile"),
-                    # ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.PASSWORD),
+                        title=ft.Text("修改密码"),
+                        on_click=open_change_passwd_dialog,
+                    ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.SETTINGS),
                         title=ft.Text("设置"),
