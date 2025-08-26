@@ -11,6 +11,7 @@ from include.upload import upload_directory, filepicker_ref
 from include.quotes import get_quote
 from include.function.lockdown import go_lockdown
 from pages.interface.passwd import open_change_passwd_dialog
+from include.controls.rulemanager import RuleManager
 
 
 """
@@ -775,6 +776,8 @@ def on_document_right_click_menu(e: ft.ControlEvent):
 
     def set_document_access_rules(inner_event: ft.ControlEvent):
         e.page.close(dialog)
+        rule_manager = RuleManager(e.control.content.data[0], "document")
+        e.page.open(rule_manager)
 
     menu_listview = ft.ListView(
         controls=[
