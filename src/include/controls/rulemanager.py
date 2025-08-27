@@ -102,6 +102,7 @@ class RuleManager(ft.AlertDialog):
             ],
             expand=True,
             width=720,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
         self.actions = [
             ft.ProgressRing(ref=self.action_progress_ring_ref, visible=False),
@@ -149,13 +150,15 @@ class RuleManager(ft.AlertDialog):
             case "document":
                 action = "get_document_access_rules"
                 data = {"document_id": self.object_id}
-            # case "directory":
-            #     action = "get_directory_info"
-            #     data = {"directory_id": self.object_id}
+            case "directory":
+                action = "get_directory_access_rules"
+                data = {"directory_id": self.object_id}
             case _:
                 raise ValueError(f"Invaild object type '{self.object_type}'")
         assert self.page
 
+        self.content_ref.current.visible = False
+        self.content_ref.current.update()
         self.lock_edit()
 
         info_resp = build_request(
@@ -173,32 +176,35 @@ class RuleManager(ft.AlertDialog):
             access_rules = info_resp["data"]
             self.content_ref.current.value = json.dumps(access_rules)
             self.unlock_edit()
+
+        self.content_ref.current.visible = True
         self.content_ref.current.update()
 
     def submit_rule(self, event: ft.ControlEvent):
         assert self.page
         self.lock_edit()
 
+        try:
+            data = {
+                "access_rules": (
+                    json.loads(self.content_ref.current.value)
+                    if self.content_ref.current.value
+                    else {}
+                ),
+            }
+        except json.decoder.JSONDecodeError:
+            send_error(self.page, "提交的规则不是有效的JSON")
+            self.close()
+            return
+
         match self.object_type:
             case "document":
                 action = "set_document_rules"
-                try:
-                    data = {
-                        "document_id": self.object_id,
-                        "access_rules": (
-                            json.loads(self.content_ref.current.value)
-                            if self.content_ref.current.value
-                            else {}
-                        ),
-                    }
-                except json.decoder.JSONDecodeError:
-                    send_error(self.page, "提交的规则不是有效的JSON")
-                    self.close()
-                    return
+                data["document_id"] = self.object_id
 
             case "directory":
                 action = "set_directory_rules"
-                data = {"directory_id": self.object_id}
+                data["directory_id"] = self.object_id
             case _:
                 raise ValueError(f"Invaild object type '{self.object_type}'")
 

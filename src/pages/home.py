@@ -12,6 +12,7 @@ from include.quotes import get_quote
 from include.function.lockdown import go_lockdown
 from pages.interface.passwd import open_change_passwd_dialog
 from include.controls.rulemanager import RuleManager
+from include.controls.welcome import HomeColumn
 
 
 """
@@ -548,6 +549,11 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
         inner_event.page.open(info_dialog)
         request_directory_info(inner_event)
 
+    def set_directory_access_rules(inner_event: ft.ControlEvent):
+        e.page.close(dialog)
+        rule_manager = RuleManager(e.control.content.data[0], "directory")
+        e.page.open(rule_manager)
+
     menu_listview = ft.ListView(
         controls=[
             ft.Column(
@@ -563,6 +569,14 @@ def on_folder_right_click_menu(e: ft.ControlEvent):
                         title=ft.Text("重命名"),
                         subtitle=ft.Text(f"重命名此文件夹"),
                         on_click=rename_directory,
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.SETTINGS_OUTLINED),
+                        title=ft.Text("设置权限"),
+                        subtitle=ft.Text(f"对此文件夹的访问规则进行变更"),
+                        on_click=set_directory_access_rules,
+                        visible="set_access_rules"
+                        in e.page.session.get("user_permissions"),
                     ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.INFO_OUTLINED),
@@ -954,14 +968,10 @@ files_container = ft.Container(
 )
 
 home_container = ft.Container(
-    content=ft.Column(
-        controls=[
-            ft.Text("落霞与孤鹜齐飞，秋水共长天一色。", size=22),
-        ],
-    ),
+    content=HomeColumn(),
     margin=10,
     padding=10,
-    alignment=ft.alignment.center,
+    # alignment=ft.alignment.center,
     visible=True,
 )
 

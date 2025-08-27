@@ -1,6 +1,6 @@
 [project]
 name = "cfms-client"
-version = "0.1.10"
+version = "0.1.11"
 description = "The client of Classified File Management System"
 readme = "README.md"
 requires-python = ">=3.13.5"
