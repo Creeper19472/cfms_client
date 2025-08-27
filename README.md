@@ -1,4 +1,9 @@
-# CfmsClient app
+# CFMS Client on Websocket
+
+Based on Websockets, CFMS client is the client program for 
+this system dedicated to confidential document management.
+
+This client is developed using the Flet framework.
 
 ## Run the app
 
