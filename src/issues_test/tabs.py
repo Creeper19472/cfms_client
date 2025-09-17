@@ -1,29 +1,32 @@
-# tabs_issue.py
 import flet as ft
 
 
 def main(page: ft.Page):
     page.navigation_bar = ft.NavigationBar(
-        destinations=[ft.NavigationBarDestination("111", icon=ft.Icons.ABC)]
+        destinations=[ft.NavigationBarDestination(icon=ft.Icons.ABC, label="One")]
     )
 
-    page.add(ft.Card(content=ft.Text("hi")))
+    page.add(ft.Card(content=ft.Text("My card")))
     page.add(
         ft.Container(
-            content=ft.Tabs(
-                tabs=[
-                    ft.Tab(
-                        "Like", content=ft.Column(controls=[ft.Text("This is a test")])
-                    )
-                ]
-            ),
             margin=10,
             padding=10,
-            alignment=ft.alignment.bottom_left, # will cause wrong behavior
-            visible=True,
+            alignment=ft.Alignment.TOP_CENTER,
+            expand=True,
+            content=ft.Tabs(
+                length=2,
+                content=ft.Column(
+                    controls=[
+                        ft.TabBar(tabs=[ft.Tab(label="One"), ft.Tab(label="Two")]),
+                        ft.TabBarView(
+                            expand=True,
+                            controls=[ft.Text("Content 1"), ft.Text("Content 2")],
+                        ),
+                    ],
+                ),
+            ),
         )
     )
 
 
-if __name__ == "__main__":
-    ft.app(main)
+ft.run(main)

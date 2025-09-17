@@ -13,6 +13,7 @@ from include.function.lockdown import go_lockdown
 from pages.interface.passwd import open_change_passwd_dialog
 from include.controls.rulemanager import RuleManager
 from include.controls.welcome import HomeColumn
+from include.controls.path import PathIndicator
 
 
 """
@@ -847,8 +848,17 @@ def on_document_right_click_menu(e: ft.ControlEvent):
     # e.page.update()
 
 
+def on_folder_clicked(e: ft.ControlEvent):
+    path_indicator_ref.current.go(e.control.data[1])
+    load_directory(e.page, e.control.data[0])
+
+
 def update_file_controls(folders: list[dict], documents: list[dict], parent_id=None):
     file_listview.controls = []  # reset
+
+    def on_parent_button_clicked(e: ft.ControlEvent):
+        path_indicator_ref.current.back()
+        load_directory(e.page, folder_id=None if parent_id == "/" else parent_id)
 
     if parent_id != None:
         # print("parent_id: ", parent_id)
@@ -857,9 +867,7 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                 leading=ft.Icon(ft.Icons.ARROW_BACK),
                 title=ft.Text("<...>"),
                 subtitle=ft.Text(f"Parent directory"),
-                on_click=lambda e: load_directory(
-                    e.page, folder_id=None if parent_id == "/" else parent_id
-                ),
+                on_click=on_parent_button_clicked,
             )
         ]
 
@@ -873,10 +881,11 @@ def update_file_controls(folders: list[dict], documents: list[dict], parent_id=N
                         f"Created time: {datetime.fromtimestamp(folder['created_time']).strftime('%Y-%m-%d %H:%M:%S')}"
                     ),
                     data=(folder["id"], folder["name"]),
-                    on_click=lambda e: load_directory(e.page, e.control.data[0]),
+                    on_click=on_folder_clicked,
                 ),
                 on_secondary_tap=on_folder_right_click_menu,
                 on_long_press_start=on_folder_right_click_menu,
+                # on_hover=on_folder_hover
                 # on_hover=lambda e: update_mouse_position(e),
             )
             for folder in folders
@@ -928,10 +937,13 @@ file_listview = ft.ListView(
     visible=False,  # Initially hidden
 )
 
+path_indicator_ref = ft.Ref[PathIndicator]()
+
 files_container = ft.Container(
     content=ft.Column(
         controls=[
             ft.Text("文件管理", size=24, weight=ft.FontWeight.BOLD),
+            PathIndicator("/", ref=path_indicator_ref),
             ft.Row(
                 controls=[
                     ft.IconButton(ft.Icons.ADD, on_click=lambda e: upload_file(e.page)),

@@ -85,24 +85,42 @@ class RuleManager(ft.AlertDialog):
         self.action_progress_ring_ref = ft.Ref[ft.ProgressRing]()
 
         self.title = "规则管理器"
-        self.content = ft.Column(
-            controls=[
-                ft.TextField(
-                    label="规则内容",
-                    multiline=True,
-                    min_lines=5,
-                    ref=self.content_ref,
-                    # max_lines=3,
+        self.visual_view_tab = ft.Tab(
+            "可视化",
+            ft.Container(VisualRuleEditor(self)),
+        )
+        self.source_view_tab = ft.Tab(
+            "源代码",
+            ft.Container(
+                ft.Column(
+                    controls=[
+                        ft.TextField(
+                            label="规则内容",
+                            multiline=True,
+                            min_lines=5,
+                            ref=self.content_ref,
+                            max_lines=16,
+                        ),
+                        ft.Markdown(
+                            "有关规则格式的说明，请参见 [CFMS 服务端文档](https://cfms-server-doc.readthedocs.io/zh-cn/latest/groups_and_rights.html#match-rules)。",
+                            selectable=False,
+                            on_tap_link=lambda e: self.on_link_tapped(e.data),
+                        ),
+                    ],
+                    # scroll=ft.ScrollMode.AUTO
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
-                ft.Markdown(
-                    "有关规则格式的说明，请参见 [CFMS 服务端文档](https://cfms-server-doc.readthedocs.io/zh-cn/latest/groups_and_rights.html#match-rules)。",
-                    selectable=False,
-                    on_tap_link=lambda e: self.on_link_tapped(e.data),
-                ),
-            ],
-            expand=True,
+                padding=ft.Padding(top=20, left=10, right=10, bottom=0),
+            ),
+        )
+        self.content = ft.Container(
+            ft.Tabs(
+                [self.visual_view_tab, self.source_view_tab],
+                animation_duration=300,
+                selected_index=1,
+            ),
             width=720,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            height=540,
         )
         self.actions = [
             ft.ProgressRing(ref=self.action_progress_ring_ref, visible=False),
@@ -112,7 +130,7 @@ class RuleManager(ft.AlertDialog):
             ft.TextButton("取消", on_click=lambda event: self.close()),
         ]
 
-        self.scrollable = True
+        # self.scrollable = True
 
         self.object_id = object_id
         self.object_type = object_type
@@ -173,8 +191,8 @@ class RuleManager(ft.AlertDialog):
                 f"Failed to fetch current rules: {info_resp['message']}"
             )
         else:
-            access_rules = info_resp["data"]
-            self.content_ref.current.value = json.dumps(access_rules)
+            self.fetched_access_rules = info_resp["data"]
+            self.content_ref.current.value = json.dumps(self.fetched_access_rules, indent=4)
             self.unlock_edit()
 
         self.content_ref.current.visible = True
@@ -220,3 +238,18 @@ class RuleManager(ft.AlertDialog):
             send_error(self.page, f"修改失败：{submit_resp["message"]}")
 
         self.close()
+
+
+class VisualRuleEditor(ft.Column):
+    def __init__(self, manager: RuleManager):
+        super().__init__()
+        self.manager = manager
+
+        self.actions_ref = ft.Ref[ft.ListView]()
+        self.current_edit_column = ft.Ref[ft.Column]()
+        self.controls = [
+            ft.Row([
+                ft.ListView(ref=self.actions_ref),
+                ft.Column([ft.Placeholder()], ref=self.current_edit_column)
+            ])
+        ]
