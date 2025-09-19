@@ -37,6 +37,9 @@ copyright = "Copyright (C) 2025 by Creeper Team"
 [tool.flet.app]
 path = "src"
 
+[tool.flet.flutter.pubspec.dependency_overrides]
+webview_flutter_android = "4.10.1"
+
 [tool.flet.android.signing]
 # store and key passwords can be passed with `--android-signing-key-store-password`
 # and `--android-signing-key-password` options or

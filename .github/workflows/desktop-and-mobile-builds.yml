@@ -74,7 +74,7 @@ jobs:
   #       overwrite: false
 
   build-windows:
-    runs-on: Windows-2022
+    runs-on: windows-latest
 
     steps:
     - name: Checkout code
