@@ -22,6 +22,7 @@ from flet_permission_handler.permission_handler import (
 from include.constants import FLET_APP_STORAGE_TEMP
 
 from include.controls.emergency import EmergencyInfoBar
+from include.controls.development import RequestDialog
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -38,9 +39,15 @@ def main(page: ft.Page):
     page.scroll = ft.ScrollMode.AUTO
     page.bgcolor = ft.Colors.TRANSPARENT
 
+    dev_dialog = RequestDialog()
+    page.add(dev_dialog)
+
     def on_keyboard(e: ft.KeyboardEvent):
         if e.key == "S" and e.ctrl:
             page.show_semantics_debugger = not page.show_semantics_debugger
+            page.update()
+        elif e.key == "Q" and e.ctrl:
+            page.open(dev_dialog)
             page.update()
 
     page.on_keyboard_event = on_keyboard
@@ -86,8 +93,8 @@ def main(page: ft.Page):
 
     page.session.set("tasks", [])
 
-    page.session.set("version", f"0.1.12.20250908_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.1.12")
+    page.session.set("version", f"0.1.13.20250919_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.1.13")
     page.session.set("protocol_version", 3)
 
     emergency_info_ref = ft.Ref[ft.Column]()

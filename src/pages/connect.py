@@ -10,6 +10,7 @@ from flet_permission_handler import (
     PermissionType,
 )
 from common.notifications import send_error
+from include.constants import INTEGRATED_CA_CERT
 from include.request import build_request
 from include.listener import listen_to_server, server_info_updater
 import threading
@@ -57,6 +58,7 @@ class ConnectToServerModel(Model):
         self.connect_button.visible = False
         self.loading_animation.visible = True
         self.input_text_field.disabled = True
+        self.disable_ssl_enforcement_switch.disabled = True
         self.page.update()
 
         server_address = "wss://" + self.server_address_ref.current.value
@@ -77,8 +79,13 @@ class ConnectToServerModel(Model):
             return  # Exit the function if the pattern is invalid
         else:
             ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
+            if not self.disable_ssl_enforcement_switch.value:
+                ssl_context.load_verify_locations(cadata=INTEGRATED_CA_CERT)
+                ssl_context.check_hostname = True
+                ssl_context.verify_mode = ssl.CERT_REQUIRED
+            else:
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
 
             try:
                 self.page.session.set(
@@ -88,6 +95,7 @@ class ConnectToServerModel(Model):
                 self.connect_button.visible = True
                 self.loading_animation.visible = False
                 self.input_text_field.disabled = False
+                self.disable_ssl_enforcement_switch.disabled = False
                 self.error_bar.content.value: str = f"连接失败：{e}"
                 self.page.update()
                 self.page.open(self.error_bar)
@@ -104,6 +112,7 @@ class ConnectToServerModel(Model):
                 self.connect_button.visible = True
                 self.loading_animation.visible = False
                 self.input_text_field.disabled = False
+                self.disable_ssl_enforcement_switch.disabled = False
                 self.error_bar.content.value: str = (
                     f"您正在连接到一个使用更高版本协议的服务器（协议版本 {server_protocol_version}），请更新客户端。"
                 )
@@ -195,6 +204,7 @@ class ConnectToServerModel(Model):
             autofocus=True,
             on_submit=self.connect_button_clicked,  # Listen for the enter key event
         )
+        self.disable_ssl_enforcement_switch = ft.Switch("禁用SSL检查（不安全）", value=False, scale=1)
 
         container = ft.Container(
             ref=self.form_container_ref,
@@ -205,6 +215,7 @@ class ConnectToServerModel(Model):
             content=ft.Column(
                 controls=[
                     self.input_text_field,
+                    self.disable_ssl_enforcement_switch,
                     ft.Row(
                         controls=[
                             self.connect_button,
