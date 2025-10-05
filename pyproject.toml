@@ -10,9 +10,9 @@ authors = [
 dependencies = [
   "flet==0.28.3",
   "flet_permission_handler",
-  "flet-open-file @ git+https://github.com/creeper19472/flet-open-file",
+  "flet-open-file @ git+https://github.com/Creeper19472/flet-open-file@ccd700f349964be730ef8d0e0c92008feea75493",
   "flet_model",
-  "flet-datatable2",
+  "flet-datatable2==0.1.0",
   "websockets",
   "pycryptodome",
   "cffi",
