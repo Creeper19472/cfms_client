@@ -3,7 +3,7 @@ import os
 from include.constants import RUNTIME_PATH, FLET_APP_STORAGE_TEMP
 
 
-GITHUB_REPO = "Creeper19472/cfms_client"
+GITHUB_REPO = "Creeper19472/cfms_client_next"
 SUPPORTED_PLATFORM = {"windows": "windows", "android": ".apk"}
 
 

@@ -1,6 +1,6 @@
 [project]
 name = "cfms-client"
-version = "0.1.13"
+version = "0.1.14"
 description = "The client of Classified File Management System"
 readme = "README.md"
 requires-python = ">=3.13.5"
@@ -39,6 +39,9 @@ path = "src"
 
 [tool.flet.flutter.pubspec.dependency_overrides]
 webview_flutter_android = "4.10.1"
+
+[tool.flet.android]
+min_sdk_version = 24
 
 [tool.flet.android.signing]
 # store and key passwords can be passed with `--android-signing-key-store-password`

@@ -93,8 +93,8 @@ def main(page: ft.Page):
 
     page.session.set("tasks", [])
 
-    page.session.set("version", f"0.1.13.20250919_alpha {page.platform.value}")
-    page.session.set("build_version", "v0.1.13")
+    page.session.set("version", f"0.1.14.20251005_alpha {page.platform.value}")
+    page.session.set("build_version", "v0.1.14")
     page.session.set("protocol_version", 3)
 
     emergency_info_ref = ft.Ref[ft.Column]()
