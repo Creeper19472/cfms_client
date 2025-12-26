@@ -25,7 +25,7 @@ from include.controls.emergency import EmergencyInfoBar
 from include.controls.development import RequestDialog
 
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 def main(page: ft.Page):
     # Page settings

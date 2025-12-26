@@ -1,3 +1,7 @@
+**NOTE:** This repository is no longer maintained. To track future development versions of this 
+application, please visit [this repo](https://github.com/creeper19472/cfms_client_next), which 
+is a heavily refactored code branch.
+
 # CFMS Client on Websocket
 
 Based on Websockets, CFMS client is the client program for 
